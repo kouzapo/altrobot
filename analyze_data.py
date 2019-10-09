@@ -9,7 +9,7 @@ from sklearn.metrics import accuracy_score, f1_score, confusion_matrix, precisio
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.ensemble import VotingClassifier, RandomForestClassifier
 
 from model import Model
@@ -32,7 +32,7 @@ def data_preprocessing(dataset):
     y = np.sign((dataset['Adj Close'] - dataset['Adj Close'].shift(1)).dropna())
     y[y == 0] = 1
     y = y.shift(-1).dropna()[1:]
-    #y.index = X.index
+    y.index = X.index
     y.name = 'Sign'
 
     returns = (dataset['Adj Close'] / dataset['Adj Close'].shift(1) - 1).dropna()
@@ -46,7 +46,7 @@ st = time.perf_counter()
 
 
 
-index_name = '^IXIC'
+index_name = '^GSPC'
 
 train = pd.read_csv('data_3/' + index_name + '_train.dat')
 X, y, returns = data_preprocessing(train)
@@ -70,7 +70,6 @@ b.splitTrainTest(rolling_window_split = (1000, 20))
 
 
 
-
 svm = Model(SVC(), svm_param_grid, 'Support Vector Machine', scaling = True)
 log = Model(LogisticRegression(max_iter = 200), logreg_param_grid, 'Logistic Regression', scaling = True)
 dt = Model(DecisionTreeClassifier(), dt_param_grid, 'Decision Tree')
@@ -82,14 +81,9 @@ lda = Model(LinearDiscriminantAnalysis(), lda_param_grid, 'LDA')
 
 
 
-
-
-
-
 b.addModels([svm, log, dt, lda])
 b.testModels(['Support Vector Machine', 'Logistic Regression', 'Decision Tree', 'LDA'])
 b.calcPerformanceMetrics(['Support Vector Machine', 'Logistic Regression', 'Decision Tree', 'LDA'])
-
 
 
 print('\nExecution time: {}'.format(time.perf_counter() - st))

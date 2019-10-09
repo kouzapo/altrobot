@@ -9,6 +9,10 @@ from sklearn.metrics import accuracy_score, f1_score, confusion_matrix, precisio
 from sklearn.ensemble import VotingClassifier, AdaBoostClassifier
 
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+from matplotlib import style
+
+style.use('ggplot')
 
 class Backtester:
     def __init__(self, X, y, returns, asset_name):
@@ -19,6 +23,7 @@ class Backtester:
 
         self.models = {}
         self.predictions = {}
+        self.cumulative_returns = {}
         self.backtest_periods = []
     
     def __runGridSearch(self, model, X_train, y_train, X_test, y_test):
@@ -50,7 +55,7 @@ class Backtester:
                 
                 cumulative_return.append(cr * (1 + 0))
 
-        return cumulative_return
+        return pd.DataFrame(cumulative_return) - 1
     
     def __calcErrorMetrics(self, model_names):
         backtest_periods = self.backtest_periods
@@ -91,7 +96,8 @@ class Backtester:
         for name in model_names:
             cumulative_return = self.__calcCR(returns[start:end], predictions[name])
 
-            results.append([cumulative_return[-1] - 1])
+            self.cumulative_returns[name] = cumulative_return
+            results.append([float(cumulative_return.iloc[-1])])
         
         report = pd.DataFrame(results)
         report.index = model_names
@@ -120,27 +126,53 @@ class Backtester:
         precision = precision_score(y[start:end], BnH_pred)
         recall = recall_score(y[start:end], BnH_pred)
         f1 = f1_score(y[start:end], BnH_pred)
-        cumulative_return = (returns[start:end] + 1).cumprod().iloc[-1] - 1
+        cumulative_return = (returns[start:end] + 1).cumprod() - 1
 
-        results.append([accuracy, precision, recall, f1, cumulative_return])
+        self.cumulative_returns['BnH'] = cumulative_return
+        results.append([accuracy, precision, recall, f1, cumulative_return.iloc[-1]])
 
-        #-----Perfect-----
+        '''#-----Perfect-----
         accuracy = accuracy_score(y[start:end], perfect_pred)
         precision = precision_score(y[start:end], perfect_pred)
         recall = recall_score(y[start:end], perfect_pred)
         f1 = f1_score(y[start:end], perfect_pred)
-        cumulative_return = self.__calcCR(returns[start:end], perfect_pred)[-1] - 1
+        cumulative_return = pd.DataFrame(self.__calcCR(returns[start:end], perfect_pred)) - 1
 
-        results.append([accuracy, precision, recall, f1, cumulative_return])
+        results.append([accuracy, precision, recall, f1, cumulative_return.iloc[-1]])'''
         
         
         report = pd.DataFrame(results)
-        report.index = ['Buy and Hold', 'Perfect Predictions']
+        report.index = ['Buy and Hold']#, 'Perfect Predictions']
         report.columns = ['Accuracy', 'Precision', 'Recall', 'F1 Score', 'Cumulative Return']
 
         #print(report)
 
         return report
+    
+    def __plotCR(self, names):
+        cumulative_returns = self.cumulative_returns
+
+        for name in names:
+            cumulative_return = cumulative_returns[name]
+
+            plt.plot(np.array(cumulative_return), label = name)
+
+            plt.xlabel('Time')
+            plt.ylabel('Cumulative Return')
+            plt.legend(loc = 2)
+            plt.title('Cumulative return for {}'.format(self.asset_name))
+
+        plt.show()
+
+
+        '''plt.plot(np.array(cumulative_return), color = 'blue', label = name)
+
+        plt.xlabel('Days')
+        plt.ylabel('Cumulative Return')
+        plt.legend(loc = 2)
+        plt.title('Cumulative return for {}'.format(name))
+
+        plt.show()'''
     
     def addModels(self, models):
         for model in models:
@@ -217,7 +249,7 @@ class Backtester:
         print('Number of models tested:', len(model_names))
         print()
 
-        print('-------------------------------Benchmark Metrics-----------------------------')
+        print('---------------------------Benchmark Metrics--------------------------')
         print(benchmark_report)
         print()
 
@@ -227,3 +259,5 @@ class Backtester:
 
         print('--------------Profitability--------------')
         print(profitability_report)
+
+        self.__plotCR(['BnH', 'Logistic Regression'])

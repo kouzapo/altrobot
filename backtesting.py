@@ -126,10 +126,11 @@ class Backtester:
         precision = precision_score(y[start:end], BnH_pred)
         recall = recall_score(y[start:end], BnH_pred)
         f1 = f1_score(y[start:end], BnH_pred)
-        cumulative_return = (returns[start:end] + 1).cumprod() - 1
+        #cumulative_return = (returns[start:end] + 1).cumprod() - 1
+        cumulative_return = self.__calcCR(returns[start:end], np.ones(len(returns[start:end])))
 
         self.cumulative_returns['BnH'] = cumulative_return
-        results.append([accuracy, precision, recall, f1, cumulative_return.iloc[-1]])
+        results.append([accuracy, precision, recall, f1, float(cumulative_return.iloc[-1])])
 
         '''#-----Perfect-----
         accuracy = accuracy_score(y[start:end], perfect_pred)
@@ -163,16 +164,6 @@ class Backtester:
             plt.title('Cumulative return for {}'.format(self.asset_name))
 
         plt.show()
-
-
-        '''plt.plot(np.array(cumulative_return), color = 'blue', label = name)
-
-        plt.xlabel('Days')
-        plt.ylabel('Cumulative Return')
-        plt.legend(loc = 2)
-        plt.title('Cumulative return for {}'.format(name))
-
-        plt.show()'''
     
     def addModels(self, models):
         for model in models:

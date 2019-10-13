@@ -44,16 +44,14 @@ def data_preprocessing(dataset):
 
 st = time.perf_counter()
 
+index_name = '^DJI'
 
-
-index_name = '^GSPC'
 
 train = pd.read_csv('data_3/' + index_name + '_train.dat')
 X, y, returns = data_preprocessing(train)
 
-#print(X)
-#print(y)
-#print(returns)
+
+
 
 
 
@@ -64,8 +62,20 @@ dt_param_grid = [{'max_depth': [10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65],
 lda_param_grid = [{'solver': ['svd', 'lsqr', 'eigen']}]
 
 b = Backtester(X, y, returns, index_name)
-b.splitTrainTest(rolling_window_split = (1000, 20))
-#b.splitTrainTest(single_split = 2000) 
+
+#b.splitTrainTest(by_index = {'Train': (0, 1000), 'Test':(1000, 3520)}, single_split = False, window = 20)
+#b.splitTrainTest(by_index = {'Train': (0, 2000), 'Test':(2000, 3520)}, single_split = True)
+#b.splitTrainTest(by_date = {'Train': ('2005-01-05', '2012-12-13'), 'Test':('2012-12-14', '2018-12-28')}, single_split = True)
+
+#b.splitTrainTest(by_date = {'Train': ('2005-01-05', '2010-09-30'), 'Test':('2010-10-01', '2018-05-01')}, single_split = True) 
+b.splitTrainTest(by_date = {'Train': ('2005-01-05', '2010-09-30'), 'Test':('2010-10-01', '2018-05-01')}, single_split = False, window = 20) 
+
+b.backtest_periods[-1]['Test'] = (3325, 3353)
+
+#for i in b.backtest_periods:
+#    print(i)
+
+
 
 
 
@@ -81,9 +91,9 @@ lda = Model(LinearDiscriminantAnalysis(), lda_param_grid, 'LDA')
 
 
 
+
 b.addModels([svm, log, dt, lda])
 b.testModels(['Support Vector Machine', 'Logistic Regression', 'Decision Tree', 'LDA'])
 b.calcPerformanceMetrics(['Support Vector Machine', 'Logistic Regression', 'Decision Tree', 'LDA'])
-
 
 print('\nExecution time: {}'.format(time.perf_counter() - st))

@@ -169,21 +169,33 @@ class Backtester:
         for model in models:
             self.models[model.name] = model
     
-    def splitTrainTest(self, single_split = None, rolling_window_split = None):
-        i = 0
-        dataset_length = len(self.X)
+    def splitTrainTest(self, by_index = None, by_date = None, single_split = True, window = -1):
+        X = self.X
 
-        if single_split is not None:
-            self.backtest_periods.append({'Train': (0, single_split), 'Test': (single_split, dataset_length)})
+        if by_index is not None:
+            train_start = by_index['Train'][0]
+            train_end = by_index['Train'][1]
+            test_start = by_index['Test'][0]
+            test_end = by_index['Test'][1]
         
-        if rolling_window_split is not None:
-            training_days = rolling_window_split[0]
-            testing_days = rolling_window_split[1]
-
-            while i + training_days + testing_days <= dataset_length:
-                self.backtest_periods.append({'Train': (i, i + training_days), 'Test': (i + training_days, i + training_days + testing_days)})
-
-                i += testing_days
+        if by_date is not None:
+            train_start = X.index.get_loc(by_date['Train'][0])
+            train_end = X.index.get_loc(by_date['Train'][1]) + 1
+            test_start = X.index.get_loc(by_date['Test'][0])
+            test_end = X.index.get_loc(by_date['Test'][1]) + 1
+        
+        if single_split:
+            self.backtest_periods.append({'Train': (train_start, train_end), 'Test': (test_start, test_end)})
+        
+        else:
+            i = train_start
+            #window = by_date['Window']
+            training_days = train_end - train_start
+            
+            while i + training_days + window <= test_end:
+                self.backtest_periods.append({'Train': (i, i + training_days), 'Test': (i + training_days, i + training_days + window)})
+                
+                i += window
     
     def testModels(self, model_names, scaling = False):
         backtest_periods = self.backtest_periods

@@ -57,6 +57,12 @@ class Backtester:
 
         return pd.DataFrame(cumulative_return) - 1
     
+    def __calcAV(self, cumulative_return, N):
+        #annualized_return = (1 + cumulative_return) ^ (365 / N) - 1
+        annualized_return = np.power(1 + cumulative_return, 365 / N) - 1
+
+        return annualized_return
+    
     def __calcErrorMetrics(self, model_names):
         backtest_periods = self.backtest_periods
         y = self.y
@@ -95,13 +101,14 @@ class Backtester:
 
         for name in model_names:
             cumulative_return = self.__calcCR(returns[start:end], predictions[name])
+            annualized_return = self.__calcAV(float(cumulative_return.iloc[-1]), len(returns[start:end]))
 
             self.cumulative_returns[name] = cumulative_return
-            results.append([float(cumulative_return.iloc[-1])])
+            results.append([float(cumulative_return.iloc[-1]), annualized_return])
         
         report = pd.DataFrame(results)
         report.index = model_names
-        report.columns = ['Cumulative Return']
+        report.columns = ['Cumulative Return', 'Annualized Return']
 
         #print(report)
         return report
@@ -128,9 +135,10 @@ class Backtester:
         f1 = f1_score(y[start:end], BnH_pred)
         #cumulative_return = (returns[start:end] + 1).cumprod() - 1
         cumulative_return = self.__calcCR(returns[start:end], np.ones(len(returns[start:end])))
+        annualized_return = self.__calcAV(float(cumulative_return.iloc[-1]), len(returns[start:end]))
 
         self.cumulative_returns['BnH'] = cumulative_return
-        results.append([accuracy, precision, recall, f1, float(cumulative_return.iloc[-1])])
+        results.append([accuracy, precision, recall, f1, float(cumulative_return.iloc[-1]), annualized_return])
 
         '''#-----Perfect-----
         accuracy = accuracy_score(y[start:end], perfect_pred)
@@ -144,7 +152,7 @@ class Backtester:
         
         report = pd.DataFrame(results)
         report.index = ['Buy and Hold']#, 'Perfect Predictions']
-        report.columns = ['Accuracy', 'Precision', 'Recall', 'F1 Score', 'Cumulative Return']
+        report.columns = ['Accuracy', 'Precision', 'Recall', 'F1 Score', 'Cumulative Return', 'Annualized Return']
 
         #print(report)
 
@@ -237,6 +245,7 @@ class Backtester:
     
     def calcPerformanceMetrics(self, model_names):
         backtest_periods = self.backtest_periods
+        returns = self.returns
         X = self.X
 
         start = backtest_periods[0]['Test'][0]

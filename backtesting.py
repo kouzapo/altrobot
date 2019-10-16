@@ -26,13 +26,25 @@ class Backtester:
         self.cumulative_returns = {}
         self.backtest_periods = []
     
-    def __runGridSearch(self, model, X_train, y_train, X_test, y_test):
+    def __runGridSearch(self, model, X_train, y_train, X_test):
         grid_search = GridSearchCV(model.estimator, model.hyperparams, cv = 2, scoring = 'accuracy')
         grid_search.fit(X_train, y_train)
 
         best_estimator = grid_search.best_estimator_
         predictions = best_estimator.predict(X_test)
         model.estimator = best_estimator
+
+        return predictions
+    
+    def __testVoting(self, model_names, X_train, y_train, X_test):
+        models = self.models
+
+        estimators = [(models[name].name, models[name].estimator) for name in model_names]
+        voting_model = VotingClassifier(estimators)
+
+        voting_model.fit(X_train, y_train)
+
+        predictions = voting_model.predict(X_test)
 
         return predictions
     
@@ -57,9 +69,9 @@ class Backtester:
 
         return pd.DataFrame(cumulative_return) - 1
     
-    def __calcAV(self, cumulative_return, N):
+    def __calcAR(self, cumulative_return, N):
         #annualized_return = (1 + cumulative_return) ^ (365 / N) - 1
-        annualized_return = np.power(1 + cumulative_return, 365 / N) - 1
+        annualized_return = np.power(1 + cumulative_return, 252 / N) - 1
 
         return annualized_return
     
@@ -101,7 +113,7 @@ class Backtester:
 
         for name in model_names:
             cumulative_return = self.__calcCR(returns[start:end], predictions[name])
-            annualized_return = self.__calcAV(float(cumulative_return.iloc[-1]), len(returns[start:end]))
+            annualized_return = self.__calcAR(float(cumulative_return.iloc[-1]), len(returns[start:end]))
 
             self.cumulative_returns[name] = cumulative_return
             results.append([float(cumulative_return.iloc[-1]), annualized_return])
@@ -135,7 +147,7 @@ class Backtester:
         f1 = f1_score(y[start:end], BnH_pred)
         #cumulative_return = (returns[start:end] + 1).cumprod() - 1
         cumulative_return = self.__calcCR(returns[start:end], np.ones(len(returns[start:end])))
-        annualized_return = self.__calcAV(float(cumulative_return.iloc[-1]), len(returns[start:end]))
+        annualized_return = self.__calcAR(float(cumulative_return.iloc[-1]), len(returns[start:end]))
 
         self.cumulative_returns['BnH'] = cumulative_return
         results.append([accuracy, precision, recall, f1, float(cumulative_return.iloc[-1]), annualized_return])
@@ -197,7 +209,6 @@ class Backtester:
         
         else:
             i = train_start
-            #window = by_date['Window']
             training_days = train_end - train_start
             
             while i + training_days + window <= test_end:
@@ -213,9 +224,9 @@ class Backtester:
         scaler = StandardScaler()
 
         for name in model_names:
-            model = self.models[name]
-
             self.predictions[name] = []
+        
+        #self.predictions['Voting'] = []
 
         for P in backtest_periods:
             train_i = P['Train']
@@ -231,11 +242,14 @@ class Backtester:
                 model = self.models[name]
 
                 if model.scaling:
-                    predictions = self.__runGridSearch(model, scaler.fit_transform(X_train), y_train, scaler.fit_transform(X_test), y_test)
+                    predictions = self.__runGridSearch(model, scaler.fit_transform(X_train), y_train, scaler.fit_transform(X_test))
                     self.predictions[name].append(predictions)
                 else:
-                    predictions = self.__runGridSearch(model, X_train, y_train, X_test, y_test)
+                    predictions = self.__runGridSearch(model, X_train, y_train, X_test)
                     self.predictions[name].append(predictions)
+            
+            #voting_predictions = self.__testVoting(['Support Vector Machine', 'Logistic Regression', 'LDA'], scaler.fit_transform(X_train), y_train, scaler.fit_transform(X_test))
+            #self.predictions['Voting'].append(voting_predictions)
 
             print(P)
         
@@ -261,7 +275,7 @@ class Backtester:
         print('Number of models tested:', len(model_names))
         print()
 
-        print('---------------------------Benchmark Metrics--------------------------')
+        print('-------------------------------------Benchmark Metrics-----------------------------------')
         print(benchmark_report)
         print()
 
@@ -269,7 +283,7 @@ class Backtester:
         print(accuracy_report)
         print()
 
-        print('--------------Profitability--------------')
+        print('------------------------Profitability-----------------------')
         print(profitability_report)
 
-        self.__plotCR(['BnH', 'Logistic Regression'])
+        self.__plotCR(['BnH', 'Logistic Regression', 'Support Vector Machine'])

@@ -65,7 +65,7 @@ class Backtester:
             elif p == -1:
                 cr = cumulative_return[-1]
                 
-                cumulative_return.append(cr * (1 + 0))
+                cumulative_return.append(cr)
 
         return pd.DataFrame(cumulative_return) - 1
     

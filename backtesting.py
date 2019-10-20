@@ -27,7 +27,12 @@ class Backtester:
         self.backtest_periods = []
     
     def __runGridSearch(self, model, X_train, y_train, X_test):
-        grid_search = GridSearchCV(model.estimator, model.hyperparams, cv = 2, scoring = 'accuracy')
+        test_fold = np.zeros(len(X_train), dtype = np.int)
+        test_fold[:950] = -1
+
+        ps = PredefinedSplit(test_fold)
+
+        grid_search = GridSearchCV(model.estimator, model.hyperparams, cv = ps, scoring = 'accuracy')
         grid_search.fit(X_train, y_train)
 
         best_estimator = grid_search.best_estimator_
@@ -65,7 +70,7 @@ class Backtester:
             elif p == -1:
                 cr = cumulative_return[-1]
                 
-                cumulative_return.append(cr)
+                cumulative_return.append(cr * (1 + 0))
 
         return pd.DataFrame(cumulative_return) - 1
     
@@ -286,4 +291,4 @@ class Backtester:
         print('------------------------Profitability-----------------------')
         print(profitability_report)
 
-        self.__plotCR(['BnH', 'Logistic Regression', 'Support Vector Machine'])
+        self.__plotCR(['BnH', 'Logistic Regression'])

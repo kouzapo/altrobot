@@ -63,19 +63,18 @@ lda_param_grid = [{'solver': ['svd', 'lsqr', 'eigen']}]
 
 b = Backtester(X, y, returns, index_name)
 
-b.splitTrainTest(by_index = {'Train': (0, 1000), 'Test':(1000, 3520)}, single_split = False, window = 20)
+b.splitTrainTest(by_index = {'Train': (0, 1000), 'Test':(1000, 3520)}, single_split = False, window = 10)
 #b.splitTrainTest(by_index = {'Train': (0, 2000), 'Test':(2000, 3520)}, single_split = True)
 #b.splitTrainTest(by_date = {'Train': ('2005-01-05', '2012-12-13'), 'Test':('2012-12-14', '2018-12-28')}, single_split = True)
 
 #b.splitTrainTest(by_date = {'Train': ('2005-01-05', '2010-09-30'), 'Test':('2010-10-01', '2018-05-01')}, single_split = True) 
-#b.splitTrainTest(by_date = {'Train': ('2005-01-05', '2010-09-30'), 'Test':('2010-10-01', '2018-05-01')}, single_split = False, window = 20) 
+#b.splitTrainTest(by_date = {'Train': ('2005-01-05', '2010-09-30'), 'Test':('2010-10-01', '2018-05-01')}, single_split = False, window = 10) 
 
-#b.backtest_periods[-1]['Test'] = (3325, 3353)
+#b.backtest_periods[-1]['Test'] = (3325, 3353) #20
+#b.backtest_periods[-1]['Test'] = (3335, 3353) #10
 
-#for i in b.backtest_periods:
-#    print(i)
-
-
+'''for i in b.backtest_periods:
+    print(i)'''
 
 
 

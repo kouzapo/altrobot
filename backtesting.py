@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import itertools
 
 import numpy as np
@@ -22,8 +25,6 @@ class Backtester:
         self.asset_name = asset_name
 
         self.models = {}
-        self.predictions = {}
-        self.cumulative_returns = {}
         self.backtest_periods = []
     
     def __runGridSearch(self, model, X_train, y_train, X_test):
@@ -53,6 +54,23 @@ class Backtester:
 
         return predictions
     
+    def __calcDailyReturns(self, returns, predictions):
+        daily_returns = [0]
+
+        A = zip(returns, predictions)
+
+        for i in A:
+            r = i[0]
+            p = i[1]
+
+            if p == 1:
+                daily_returns.append(r)
+            
+            elif p == -1:
+                daily_returns.append(0)
+        
+        return pd.DataFrame(daily_returns)
+    
     def __calcCR(self, returns, predictions):
         cumulative_return = [1]
 
@@ -70,7 +88,7 @@ class Backtester:
             elif p == -1:
                 cr = cumulative_return[-1]
                 
-                cumulative_return.append(cr * (1 + 0))
+                cumulative_return.append(cr)
 
         return pd.DataFrame(cumulative_return) - 1
     
@@ -80,6 +98,16 @@ class Backtester:
 
         return annualized_return
     
+    def __calcAV(self, returns, predictions):
+        daily_returns = self.__calcDailyReturns(returns, predictions)
+
+        annualized_volatiliy = float(daily_returns.std() * np.sqrt(252))
+
+        return annualized_volatiliy
+    
+    def __calcSharpeRatio(self):
+        pass
+
     def __calcErrorMetrics(self, model_names):
         backtest_periods = self.backtest_periods
         y = self.y
@@ -90,7 +118,8 @@ class Backtester:
         results = []
 
         for name in model_names:
-            predictions = self.predictions[name]
+            model = self.models[name]
+            predictions = model.predictions
 
             accuracy = accuracy_score(predictions, y[start:end])
             precision = precision_score(predictions, y[start:end])
@@ -108,7 +137,6 @@ class Backtester:
     
     def __calcProfitabilityMetrics(self, model_names):
         backtest_periods = self.backtest_periods
-        predictions = self.predictions
         returns = self.returns
 
         start = backtest_periods[0]['Test'][0]
@@ -117,15 +145,19 @@ class Backtester:
         results = []
 
         for name in model_names:
-            cumulative_return = self.__calcCR(returns[start:end], predictions[name])
-            annualized_return = self.__calcAR(float(cumulative_return.iloc[-1]), len(returns[start:end]))
+            model = self.models[name]
+            predictions = model.predictions
+            
+            cumulative_return = model.calcCR(returns[start:end])
+            annualized_return = model.calcAR(len(returns[start:end]))
+            annualized_volatiliy = model.calcAV(returns[start:end])
+            sharpe_ratio = model.calcSharpeRatio()
 
-            self.cumulative_returns[name] = cumulative_return
-            results.append([float(cumulative_return.iloc[-1]), annualized_return])
+            results.append([float(cumulative_return.iloc[-1]), annualized_return, annualized_volatiliy, sharpe_ratio])
         
         report = pd.DataFrame(results)
         report.index = model_names
-        report.columns = ['Cumulative Return', 'Annualized Return']
+        report.columns = ['CR', 'AR', 'AV', 'SR']
 
         #print(report)
         return report
@@ -153,9 +185,14 @@ class Backtester:
         #cumulative_return = (returns[start:end] + 1).cumprod() - 1
         cumulative_return = self.__calcCR(returns[start:end], np.ones(len(returns[start:end])))
         annualized_return = self.__calcAR(float(cumulative_return.iloc[-1]), len(returns[start:end]))
+        annualized_volatiliy = self.__calcAV(returns[start:end], np.ones(len(returns[start:end])))
 
-        self.cumulative_returns['BnH'] = cumulative_return
-        results.append([accuracy, precision, recall, f1, float(cumulative_return.iloc[-1]), annualized_return])
+        self.buy_and_hold_CR = cumulative_return
+        self.buy_and_hold_AR = annualized_return
+        self.buy_and_hold_AV = annualized_volatiliy
+        self.sharpe_ratio = annualized_return / annualized_volatiliy
+
+        results.append([accuracy, precision, recall, f1, float(cumulative_return.iloc[-1]), annualized_return, annualized_volatiliy, self.sharpe_ratio])
 
         '''#-----Perfect-----
         accuracy = accuracy_score(y[start:end], perfect_pred)
@@ -169,25 +206,26 @@ class Backtester:
         
         report = pd.DataFrame(results)
         report.index = ['Buy and Hold']#, 'Perfect Predictions']
-        report.columns = ['Accuracy', 'Precision', 'Recall', 'F1 Score', 'Cumulative Return', 'Annualized Return']
+        report.columns = ['Accuracy', 'Precision', 'Recall', 'F1 Score', 'CR', 'AR', 'AV', 'SR']
 
         #print(report)
 
         return report
     
     def __plotCR(self, names):
-        cumulative_returns = self.cumulative_returns
-
         for name in names:
-            cumulative_return = cumulative_returns[name]
+            model = self.models[name]
+            cumulative_return = model.cumulative_returns
 
             plt.plot(np.array(cumulative_return), label = name)
+        
+        plt.plot(np.array(self.buy_and_hold_CR), label = 'BnH')
 
-            plt.xlabel('Time')
-            plt.ylabel('Cumulative Return')
-            plt.legend(loc = 2)
-            plt.title('Cumulative return for {}'.format(self.asset_name))
-
+        plt.xlabel('Time')
+        plt.ylabel('Cumulative Return')
+        plt.legend(loc = 2)
+        plt.title('Cumulative return for {}'.format(self.asset_name))
+        
         plt.show()
     
     def addModels(self, models):
@@ -228,11 +266,6 @@ class Backtester:
 
         scaler = StandardScaler()
 
-        for name in model_names:
-            self.predictions[name] = []
-        
-        #self.predictions['Voting'] = []
-
         for P in backtest_periods:
             train_i = P['Train']
             test_i = P['Test']
@@ -248,10 +281,10 @@ class Backtester:
 
                 if model.scaling:
                     predictions = self.__runGridSearch(model, scaler.fit_transform(X_train), y_train, scaler.fit_transform(X_test))
-                    self.predictions[name].append(predictions)
                 else:
                     predictions = self.__runGridSearch(model, X_train, y_train, X_test)
-                    self.predictions[name].append(predictions)
+                
+                model.predictions.append(predictions)
             
             #voting_predictions = self.__testVoting(['Support Vector Machine', 'Logistic Regression', 'LDA'], scaler.fit_transform(X_train), y_train, scaler.fit_transform(X_test))
             #self.predictions['Voting'].append(voting_predictions)
@@ -259,8 +292,10 @@ class Backtester:
             print(P)
         
         for name in model_names:
-             total_predictions = list(itertools.chain.from_iterable(self.predictions[name]))
-             self.predictions[name] = total_predictions
+            model = self.models[name]
+
+            total_predictions = list(itertools.chain.from_iterable(model.predictions))
+            model.predictions = total_predictions
     
     def calcPerformanceMetrics(self, model_names):
         backtest_periods = self.backtest_periods
@@ -280,7 +315,7 @@ class Backtester:
         print('Number of models tested:', len(model_names))
         print()
 
-        print('-------------------------------------Benchmark Metrics-----------------------------------')
+        print('---------------------------------------Benchmark Metrics-----------------------------------')
         print(benchmark_report)
         print()
 
@@ -288,7 +323,7 @@ class Backtester:
         print(accuracy_report)
         print()
 
-        print('------------------------Profitability-----------------------')
+        print('--------------------------Profitability-----------------------')
         print(profitability_report)
 
-        self.__plotCR(['BnH', 'Logistic Regression'])
+        self.__plotCR(['Logistic Regression'])

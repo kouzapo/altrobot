@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import time
 
 import numpy as np
@@ -44,7 +47,7 @@ def data_preprocessing(dataset):
 
 st = time.perf_counter()
 
-index_name = '^GSPC'
+index_name = '^RUT'
 
 
 train = pd.read_csv('data_3/' + index_name + '_train.dat')

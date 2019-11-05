@@ -24,3 +24,5 @@ class AllInOutStrategy(Strategy):
 
             elif p == -1:
                 signals.append(('sell', 1))
+        
+        return signals

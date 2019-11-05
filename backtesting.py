@@ -18,9 +18,11 @@ from matplotlib import style
 style.use('ggplot')
 
 class Backtester:
-    def __init__(self, X, y, returns, model, strategy, portfolio):
+    def __init__(self, X, y, returns, asset_name, model, strategy, portfolio):
         self.X = X
         self.y = y
+        self.returns = returns
+        self.asset_name = asset_name
 
         self.model = model
         self.strategy = strategy
@@ -81,11 +83,27 @@ class Backtester:
         end = self.backtest_periods[-1]['Test'][1]
 
         y_true = self.y[start:end]
+        returns = self.returns[start:end]
 
         predictions = self.__makePredictions()
         signals = self.strategy.generateSignals(predictions)
 
-        #self.portfolio.calcErrorMetrics(predictions, y_true)
-        #self.portfolio.calcProfitabilityMetrics(signals)
+        self.portfolio.calcErrorMetrics(predictions, y_true)
+        self.portfolio.calcProfitabilityMetrics(signals, returns)
 
         #print(self.portfolio.error_metrics)
+    
+    def report(self):
+        start = self.backtest_periods[0]['Test'][0]
+        end = self.backtest_periods[-1]['Test'][1]
+
+        error_metrics_report = pd.DataFrame([self.portfolio.error_metrics], columns = ['Accuracy', 'Precision', 'Recall', 'F1 Score'], index = [self.model.name])
+
+        print()
+        print('Performance metrics for:', self.asset_name)
+        print('Testing period: {} to {}'.format(self.X.index[start], self.X.index[end - 1]))
+        print()
+
+        print('------------------------Error Metrics-----------------------')
+        print(error_metrics_report)
+        print()

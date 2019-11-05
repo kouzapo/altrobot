@@ -19,7 +19,7 @@ from model import Model
 from strategy import AllInOutStrategy
 from portfolio import Portfolio
 from backtesting import Backtester
-from data_preprocessing import threePastClosing
+from data_preprocessing import three_past_closing
 
 st = time.perf_counter()
 
@@ -27,7 +27,7 @@ index_name = '^GSPC'
 
 
 train = pd.read_csv('data_3/' + index_name + '_train.dat')
-X, y, returns = threePastClosing(train)
+X, y, returns = three_past_closing(train)
 
 logreg_param_grid = [{'C': [5, 6, 7, 8, 9, 10, 11, 12], 'solver': ['liblinear', 'lbfgs']}]
 log_model = Model(LogisticRegression(max_iter = 200), logreg_param_grid, 'Logistic Regression', scaling = True)
@@ -35,7 +35,7 @@ log_model = Model(LogisticRegression(max_iter = 200), logreg_param_grid, 'Logist
 strategy = AllInOutStrategy()
 portfolio = Portfolio()
 
-b = Backtester(X, y, returns, log_model, strategy, portfolio)
+b = Backtester(X, y, returns, index_name, log_model, strategy, portfolio)
 
 b.splitTrainTest(by_index = {'Train': (0, 1000), 'Test':(1000, 3520)}, single_split = False, window = 10)
 #b.splitTrainTest(by_index = {'Train': (0, 2000), 'Test':(2000, 3520)}, single_split = True)
@@ -46,7 +46,7 @@ b.splitTrainTest(by_index = {'Train': (0, 1000), 'Test':(1000, 3520)}, single_sp
     print(i)'''
 
 b.runTest()
-
+b.report()
 
 
 print('\nExecution time: {}'.format(time.perf_counter() - st))

@@ -67,12 +67,12 @@ class Portfolio:
         self.sharpe_ratio = sharpe_ratio
     
     def calcErrorMetrics(self, predictions, y_true):
-        accuracy = accuracy_score(predictions, y_true)
-        precision = precision_score(predictions, y_true)
-        recall = recall_score(predictions, y_true)
-        f1 = f1_score(predictions, y_true)
+        self.accuracy = accuracy_score(predictions, y_true)
+        self.precision = precision_score(predictions, y_true)
+        self.recall = recall_score(predictions, y_true)
+        self.f1 = f1_score(predictions, y_true)
 
-        self.error_metrics = np.array([accuracy, precision, recall, f1])
+        self.error_metrics = np.array([self.accuracy, self.precision, self.recall, self.f1])
     
     def calcProfitabilityMetrics(self, signals, returns):
         self.__calcDailyReturns(signals, returns)
@@ -82,7 +82,4 @@ class Portfolio:
         self.__calcAV()
         self.__calcSR()
 
-        #print(self.cumulative_return)
-        #print(self.annualized_return)
-        #print(self.annualized_volatiliy)
-        #print(self.sharpe_ratio)
+        self.profitability_metrics = np.array([float(self.cumulative_return.iloc[-1]), self.annualized_return, self.annualized_volatiliy, self.sharpe_ratio])

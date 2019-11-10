@@ -90,15 +90,14 @@ class Backtester:
 
         self.portfolio.calcErrorMetrics(predictions, y_true)
         self.portfolio.calcProfitabilityMetrics(signals, returns)
-
-        #print(self.portfolio.error_metrics)
     
     def report(self):
         start = self.backtest_periods[0]['Test'][0]
         end = self.backtest_periods[-1]['Test'][1]
 
         error_metrics_report = pd.DataFrame([self.portfolio.error_metrics], columns = ['Accuracy', 'Precision', 'Recall', 'F1 Score'], index = [self.model.name])
-
+        profitability_metrics_report = pd.DataFrame([self.portfolio.profitability_metrics], columns = ['CR', 'AR', 'AV', 'SR'], index = [self.model.name])
+        
         print()
         print('Performance metrics for:', self.asset_name)
         print('Testing period: {} to {}'.format(self.X.index[start], self.X.index[end - 1]))
@@ -106,4 +105,8 @@ class Backtester:
 
         print('------------------------Error Metrics-----------------------')
         print(error_metrics_report)
+        print()
+
+        print('-------------------Profitability Metrics------------------')
+        print(profitability_metrics_report)
         print()

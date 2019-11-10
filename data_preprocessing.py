@@ -4,7 +4,7 @@
 import numpy as np
 import pandas as pd
 
-def threePastClosing(dataset):
+def three_past_closing(dataset):
     #dates = dataset['Date']
 
     X = dataset.drop(['Volume', 'Open', 'High', 'Low', 'Close'], axis = 1)

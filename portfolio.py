@@ -14,21 +14,7 @@ class Portfolio:
         self.performance_metrics = None
     
     def __calcDailyReturns(self, signals, returns):
-        daily_returns = [0]
-
-        A = zip(signals, returns)
-
-        for i in A:
-            s = i[0]
-            r = i[1]
-
-            if s[0] == 'buy':
-                daily_returns.append(r)
-            
-            elif s[0] == 'sell':
-                daily_returns.append(0)
-        
-        self.daily_returns = pd.DataFrame(daily_returns)
+        self.daily_returns = np.multiply(np.array(signals), np.array(returns))
     
     def __calcCR(self, signals, returns):
         cumulative_return = [1]
@@ -41,11 +27,7 @@ class Portfolio:
 
             cr = cumulative_return[-1]
 
-            if s[0] == 'buy':
-                cumulative_return.append(cr * (1 + r))
-            
-            elif s[0] == 'sell':
-                cumulative_return.append(cr * (1 + 0))
+            cumulative_return.append(cr + (cr * s * r))
         
         self.cumulative_return = pd.DataFrame(cumulative_return) - 1
     

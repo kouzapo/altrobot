@@ -20,9 +20,9 @@ class AllInOutStrategy(Strategy):
 
         for p in predictions:
             if p == 1:
-                signals.append(('buy', 1))
+                signals.append(1)
 
             elif p == -1:
-                signals.append(('sell', 1))
+                signals.append(0)
         
         return signals

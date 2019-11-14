@@ -16,7 +16,7 @@ class Model:
 
         self.best_estimator = None
 
-    def runGridSearch(self, X_train, y_train):
+    def grid_search(self, X_train, y_train):
         if self.scaling:
             X_train = StandardScaler().fit_transform(X_train)
 

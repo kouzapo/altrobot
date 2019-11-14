@@ -8,14 +8,14 @@ class Strategy(ABC):
         pass
     
     @abstractmethod
-    def generateSignals(self):
+    def generate_signals(self):
         pass
 
 class AllInOutStrategy(Strategy):
     def __init__(self):
         pass
     
-    def generateSignals(self, predictions):
+    def generate_signals(self, predictions):
         signals = []
 
         for p in predictions:

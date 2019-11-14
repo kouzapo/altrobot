@@ -13,10 +13,10 @@ class Portfolio:
         self.error_metrics = None
         self.performance_metrics = None
     
-    def __calcDailyReturns(self, signals, returns):
+    def __calc_daily_returns(self, signals, returns):
         self.daily_returns = np.multiply(np.array(signals), np.array(returns))
     
-    def __calcCR(self, signals, returns):
+    def __calc_CR(self, signals, returns):
         cumulative_return = [1]
 
         A = zip(signals, returns)
@@ -31,24 +31,24 @@ class Portfolio:
         
         self.cumulative_return = pd.DataFrame(cumulative_return) - 1
     
-    def __calcAR(self, N):
+    def __calc_AR(self, N):
         CR = self.cumulative_return.iloc[-1]
         
         annualized_return = np.power(1 + float(CR), 252 / N) - 1
 
         self.annualized_return = annualized_return
     
-    def __calcAV(self):
+    def __calc_AV(self):
         annualized_volatiliy = float(self.daily_returns.std() * np.sqrt(252))
 
         self.annualized_volatiliy = annualized_volatiliy
     
-    def __calcSR(self):
+    def __calc_SR(self):
         sharpe_ratio = self.annualized_return / self.annualized_volatiliy
 
         self.sharpe_ratio = sharpe_ratio
     
-    def calcErrorMetrics(self, predictions, y_true):
+    def calc_error_metrics(self, predictions, y_true):
         self.accuracy = accuracy_score(predictions, y_true)
         self.precision = precision_score(predictions, y_true)
         self.recall = recall_score(predictions, y_true)
@@ -56,12 +56,12 @@ class Portfolio:
 
         self.error_metrics = np.array([self.accuracy, self.precision, self.recall, self.f1])
     
-    def calcProfitabilityMetrics(self, signals, returns):
-        self.__calcDailyReturns(signals, returns)
+    def calc_profitability_metrics(self, signals, returns):
+        self.__calc_daily_returns(signals, returns)
 
-        self.__calcCR(signals, returns)
-        self.__calcAR(len(returns))
-        self.__calcAV()
-        self.__calcSR()
+        self.__calc_CR(signals, returns)
+        self.__calc_AR(len(returns))
+        self.__calc_AV()
+        self.__calc_SR()
 
         self.profitability_metrics = np.array([float(self.cumulative_return.iloc[-1]), self.annualized_return, self.annualized_volatiliy, self.sharpe_ratio])

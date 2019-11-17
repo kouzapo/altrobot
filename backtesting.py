@@ -16,6 +16,9 @@ from matplotlib import style
 
 from utilities import progress_bar
 
+from strategy import AllInOutStrategy
+from portfolio import Portfolio
+
 style.use('ggplot')
 
 class Backtester:
@@ -31,18 +34,23 @@ class Backtester:
 
         self.backtest_periods = []
     
-    def __benchmark_accuracy_metrics(self, y_true):
+    def __benchmark_metrics(self):
         start = self.backtest_periods[0]['Test'][0]
         end = self.backtest_periods[-1]['Test'][1]
 
         y_true = self.y[start:end]
+        returns = self.returns[start:end]
 
-        accuracy = accuracy_score(np.ones(len(y_true)), y_true)
-        precision = precision_score(np.ones(len(y_true)), y_true)
-        recall = recall_score(np.ones(len(y_true)), y_true)
-        f1 = f1_score(np.ones(len(y_true)), y_true)
+        self.bnh_strategy = AllInOutStrategy()
+        self.bnh_portfolio = Portfolio()
 
-        self.benchmark_accuracy_metrics = np.array([accuracy, precision, recall, f1])
+        predictions = np.ones(len(self.y[start:end]), dtype = int)
+        signals = self.bnh_strategy.generate_signals(predictions)
+
+        self.bnh_portfolio.calc_error_metrics(predictions, y_true)
+        self.bnh_portfolio.calc_profitability_metrics(signals, returns)
+
+        return self.bnh_portfolio.error_metrics, self.bnh_portfolio.profitability_metrics
 
     def __make_predictions(self):
         X = self.X
@@ -94,6 +102,17 @@ class Backtester:
                 i += window
 
         self.backtest_periods[-1]['Test'] = (self.backtest_periods[-1]['Test'][0], len(self.X))
+    
+    def plot_CR(self):
+        plt.plot(self.portfolio.cumulative_return, label = 'AAA')
+        plt.plot(self.bnh_portfolio.cumulative_return, label = 'Buy & Hold')
+
+        plt.ylabel('Cumulative Return')
+        plt.xlabel('Time')
+        plt.title('Cumulative Return for {}'.format(self.asset_name))
+        plt.legend(loc = 2)
+
+        plt.show()
         
     def test(self):
         start = self.backtest_periods[0]['Test'][0]
@@ -105,11 +124,9 @@ class Backtester:
         predictions = self.__make_predictions()
         signals = self.strategy.generate_signals(predictions)
 
-        self.__benchmark_accuracy_metrics(y_true)
-        print(self.benchmark_accuracy_metrics)
-
-        #self.portfolio.calc_error_metrics(predictions, y_true)
-        #self.portfolio.calc_profitability_metrics(signals, returns)
+        self.__benchmark_metrics()
+        self.portfolio.calc_error_metrics(predictions, y_true)
+        self.portfolio.calc_profitability_metrics(signals, returns)
     
     def report(self):
         start = self.backtest_periods[0]['Test'][0]
@@ -117,10 +134,21 @@ class Backtester:
 
         error_metrics_report = pd.DataFrame([self.portfolio.error_metrics], columns = ['Accuracy', 'Precision', 'Recall', 'F1 Score'], index = [self.model.name])
         profitability_metrics_report = pd.DataFrame([self.portfolio.profitability_metrics], columns = ['CR', 'AR', 'AV', 'SR'], index = [self.model.name])
-        
+
+        bnh_error_metrics = pd.DataFrame([self.bnh_portfolio.error_metrics], columns = ['Accuracy', 'Precision', 'Recall', 'F1 Score'], index = ['Buy & Hold'])
+        bnh_profitability_metrics = pd.DataFrame([self.bnh_portfolio.profitability_metrics], columns = ['CR', 'AR', 'AV', 'SR'], index = ['Buy & Hold'])
+
         print()
         print('Performance metrics for:', self.asset_name)
         print('Testing period: {} to {}'.format(self.X.index[start], self.X.index[end - 1]))
+        print()
+
+        print('------------------BnH Error Metrics-----------------')
+        print(bnh_error_metrics)
+        print()
+
+        print('-------------BnH Profitability Metrics-------------')
+        print(bnh_profitability_metrics)
         print()
 
         print('------------------------Error Metrics-----------------------')
@@ -130,3 +158,5 @@ class Backtester:
         print('-------------------Profitability Metrics-------------------')
         print(profitability_metrics_report)
         print()
+
+        self.plot_CR()

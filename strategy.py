@@ -3,6 +3,8 @@
 
 from abc import ABC, abstractmethod
 
+import numpy as np
+
 class Strategy(ABC):
     def __init__(self):
         pass
@@ -25,4 +27,4 @@ class AllInOutStrategy(Strategy):
             elif p == -1:
                 signals.append(0)
         
-        return signals
+        return np.array(signals)

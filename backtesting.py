@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib import style
 
-from utilities import progress_bar
+from utils import progress_bar
 
 from strategy import AllInOutStrategy
 from portfolio import Portfolio

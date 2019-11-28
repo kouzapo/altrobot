@@ -122,6 +122,7 @@ class Backtester:
         returns = self.returns[start:end]
 
         predictions = self.__make_predictions()
+
         signals = self.strategy.generate_signals(predictions)
 
         self.__benchmark_metrics()
@@ -143,11 +144,11 @@ class Backtester:
         print('Testing period: {} to {}'.format(self.X.index[start], self.X.index[end - 1]))
         print()
 
-        print('------------------BnH Error Metrics-----------------')
+        print('------------------BnH Error Metrics----------------')
         print(bnh_error_metrics)
         print()
 
-        print('-------------BnH Profitability Metrics-------------')
+        print('------------BnH Profitability Metrics------------')
         print(bnh_profitability_metrics)
         print()
 

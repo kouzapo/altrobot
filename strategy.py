@@ -21,10 +21,10 @@ class AllInOutStrategy(Strategy):
         signals = []
 
         for p in predictions:
-            if p == 1:
+            if p >= 0.5:
                 signals.append(1)
 
-            elif p == -1:
+            elif p < 0.5:
                 signals.append(0)
         
         return np.array(signals)

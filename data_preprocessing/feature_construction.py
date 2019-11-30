@@ -89,8 +89,8 @@ class FeatureConstructor:
         return X
 
     def run_preprocessing(self):
-        #X = self._three_past_closing()
-        X = self._technical_indicators()[:-1]
+        X = self._three_past_closing()
+        #X = self._technical_indicators()[:-1]
 
         returns = self._returns()
         y = self._labels(returns)

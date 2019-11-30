@@ -13,10 +13,10 @@ class Portfolio:
         self.error_metrics = None
         self.performance_metrics = None
     
-    def __calc_daily_returns(self, signals, returns):
-        self.daily_returns = np.multiply(np.array(signals), np.array(returns))
+    def _realized_returns(self, signals, returns):
+        self.realized_returns = np.multiply(signals, np.array(returns))
     
-    def __calc_CR(self, signals, returns):
+    def _CR(self, signals, returns):
         cumulative_return = [1]
 
         A = zip(signals, returns)
@@ -31,19 +31,19 @@ class Portfolio:
         
         self.cumulative_return = pd.DataFrame(cumulative_return) - 1
     
-    def __calc_AR(self, N):
+    def _AR(self, N):
         CR = self.cumulative_return.iloc[-1]
         
         annualized_return = np.power(1 + float(CR), 252 / N) - 1
 
         self.annualized_return = annualized_return
     
-    def __calc_AV(self):
-        annualized_volatiliy = float(self.daily_returns.std() * np.sqrt(252))
+    def _AV(self):
+        annualized_volatiliy = float(self.realized_returns.std() * np.sqrt(252))
 
         self.annualized_volatiliy = annualized_volatiliy
     
-    def __calc_SR(self):
+    def _SR(self):
         sharpe_ratio = self.annualized_return / self.annualized_volatiliy
 
         self.sharpe_ratio = sharpe_ratio
@@ -57,11 +57,11 @@ class Portfolio:
         self.error_metrics = np.array([self.accuracy, self.precision, self.recall, self.f1])
     
     def calc_profitability_metrics(self, signals, returns):
-        self.__calc_daily_returns(signals, returns)
+        self._realized_returns(signals, returns)
 
-        self.__calc_CR(signals, returns)
-        self.__calc_AR(len(returns))
-        self.__calc_AV()
-        self.__calc_SR()
+        self._CR(signals, returns)
+        self._AR(len(returns))
+        self._AV()
+        self._SR()
 
         self.profitability_metrics = np.array([float(self.cumulative_return.iloc[-1]), self.annualized_return, self.annualized_volatiliy, self.sharpe_ratio])

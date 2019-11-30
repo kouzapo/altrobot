@@ -18,13 +18,6 @@ class AllInOutStrategy(Strategy):
         pass
     
     def generate_signals(self, predictions):
-        signals = []
+        signals = np.array([1 if p >= 0 else 0 for p in predictions])
 
-        for p in predictions:
-            if p >= 0.5:
-                signals.append(1)
-
-            elif p < 0.5:
-                signals.append(0)
-        
-        return np.array(signals)
+        return signals

@@ -25,6 +25,7 @@ class FeatureConstructor:
     def _labels(self, returns):
         y = np.sign(returns)
         y[y == 0] = 1
+        y[y == -1] = 0
 
         return y
     
@@ -89,8 +90,8 @@ class FeatureConstructor:
         return X
 
     def run_preprocessing(self):
-        X = self._three_past_closing()
-        #X = self._technical_indicators()[:-1]
+        #X = self._three_past_closing()
+        X = self._technical_indicators()[:-1]
 
         returns = self._returns()
         y = self._labels(returns)

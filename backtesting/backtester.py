@@ -31,8 +31,12 @@ class Backtester:
         self.policy = policy
 
         self.backtest_periods = []
-        self.model_names = list(self.models.keys())
-        self.portfolios = {name: BacktestPortfolio() for name in self.model_names}
+
+        #self.portfolio = BacktestPortfolio()
+        #self.predictions = []
+
+        self.portfolios = {model_name: BacktestPortfolio() for model_name in self.models.keys()}
+        self.predictions = {model_name: [] for model_name in self.models.keys()}
     
     def _benchmark_metrics(self):
         start = self.backtest_periods[0]['Test'][0]
@@ -70,53 +74,48 @@ class Backtester:
 
         self.backtest_periods[-1]['Test'] = (self.backtest_periods[-1]['Test'][0], len(self.X))
     
-    def _predict(self):
+    def _predict(self, model_name):
         X = self.X
         y = self.y
 
-        self.predictions = {name: [] for name in self.model_names}
-
         n = len(self.backtest_periods)
+        i = 0
 
-        progress_bar(0, n, prefix = 'Backtesting:', length = 50)
+        progress_bar(0, n, prefix = model_name + ':', length = 20)
 
-        for name in self.model_names:
-            model = self.models[name]
-            i = 0
+        for period in self.backtest_periods:
+            train_i = period['Train']
+            test_i = period['Test']
 
-            for P in self.backtest_periods:
-                train_i = P['Train']
-                test_i = P['Test']
+            X_train = X[train_i[0]:train_i[1]]
+            y_train = y[train_i[0]:train_i[1]]
 
-                X_train = X[train_i[0]:train_i[1]]
-                y_train = y[train_i[0]:train_i[1]]
+            X_test = X[test_i[0]:test_i[1]]
+            y_test = y[test_i[0]:test_i[1]]
 
-                X_test = X[test_i[0]:test_i[1]]
-                y_test = y[test_i[0]:test_i[1]]
+            X_train = StandardScaler().fit_transform(X_train)
+            X_test = StandardScaler().fit_transform(X_test)
 
-                X_train = StandardScaler().fit_transform(X_train)
-                X_test = StandardScaler().fit_transform(X_test)
+            self.models[model_name].fit(X_train, y_train, batch_size = 100, epochs = 100, verbose = 0)
 
-                model.fit(X_train, y_train, batch_size = 50, epochs = 100, verbose = 0)
+            #predictions = self.model.predict(X_test)[:, 0]
+            predicted_probs = self.models[model_name].predict(X_test)[:, 0]
+            P = [1 if p >= 0.5 else 0 for p in predicted_probs]
 
-                predictions = model.predict(X_test)[:, 0]
-                P = [1 if p >= 0.5 else 0 for p in predictions]
+            self.predictions[model_name].append(P)
 
-                self.predictions[name].append(P)
+            progress_bar(i, n, prefix = model_name + ':', length = 20)
+            i += 1
+        
+        progress_bar(n, n, prefix = model_name + ':', length = 20)
 
-                progress_bar(i, n, prefix = 'Backtesting:', length = 50)
-                i += 1
-            
-            #progress_bar(n, n, prefix = 'Backtesting:', length = 50)
-            
-            self.predictions[name] = list(itertools.chain.from_iterable(self.predictions[name]))
+        self.predictions[model_name] = list(itertools.chain.from_iterable(self.predictions[model_name]))
     
     def plot_CR(self):
-        #plt.plot(self.portfolio.cumulative_return, label = self.model.name)
-        for name in self.model_names:
-            plt.plot(self.portfolios[name].cumulative_return, label = name)
-
         plt.plot(self.bnh_portfolio.cumulative_return, label = 'Buy & Hold')
+
+        for model_name, portfolio in self.portfolios.items():
+            plt.plot(portfolio.cumulative_return, label = model_name)
 
         plt.ylabel('Cumulative Return')
         plt.xlabel('Time')
@@ -132,44 +131,35 @@ class Backtester:
         y_true = self.y[start:end]
         returns = self.returns[start:end]
 
-        self._predict()
-
-        for name in self.model_names:
-            signals = self.policy.generate_signals(self.predictions[name])
-
-            self.portfolios[name].calc_error_metrics(self.predictions[name], y_true)
-            self.portfolios[name].calc_profitability_metrics(signals, returns)
+        print('Training {} model(s):\n'.format(len(self.models)))
         
+        for model_name in self.models.keys():
+            #print(self.models[model_name])
+            self._predict(model_name)
+
+            signals = self.policy.generate_signals(self.predictions[model_name])
+
+            self.portfolios[model_name].calc_error_metrics(self.predictions[model_name], y_true)
+            self.portfolios[model_name].calc_profitability_metrics(signals, returns)
+
         self._benchmark_metrics()
     
     def report(self):
         start = self.backtest_periods[0]['Test'][0]
         end = self.backtest_periods[-1]['Test'][1]
 
-        bnh_error_metrics = pd.DataFrame([self.bnh_portfolio.error_metrics], columns = ['Accuracy', 'Precision', 'Recall', 'F1 Score'], index = ['Buy & Hold'])
-        bnh_profitability_metrics = pd.DataFrame([self.bnh_portfolio.profitability_metrics], columns = ['CR', 'AR', 'AV', 'SR'], index = ['Buy & Hold'])
+        error_metrics_report = pd.DataFrame([self.bnh_portfolio.error_metrics] + [self.portfolios[model_name].error_metrics for model_name in self.portfolios.keys()], columns = ['Accuracy', 'Precision', 'Recall', 'F1 Score'], index = ['Buy & Hold'] + [model_name for model_name in self.models.keys()])
+        profitability_metrics_report = pd.DataFrame([self.bnh_portfolio.profitability_metrics] + [self.portfolios[model_name].profitability_metrics for model_name in self.portfolios.keys()], columns = ['CR', 'AR', 'AV', 'SR'], index = ['Buy & Hold'] + [model_name for model_name in self.models.keys()])
 
-        error_metrics_report = pd.DataFrame([self.portfolios[name].error_metrics for name in self.model_names], columns = ['Accuracy', 'Precision', 'Recall', 'F1 Score'], index = self.model_names)
-        profitability_metrics_report = pd.DataFrame([self.portfolios[name].profitability_metrics for name in self.model_names], columns = ['CR', 'AR', 'AV', 'SR'], index = self.model_names)
-
-        print()
-        print('Performance metrics for:', self.asset_name)
+        print('\n\n===========Performance metrics for {}==========='.format(self.asset_name))
         print('Testing period: {} to {}'.format(self.X.index[start], self.X.index[end - 1]))
-        print()
+        print('Models tested: {}\n'.format(len(self.models)))
 
-        print('------------------BnH Error Metrics----------------')
-        print(bnh_error_metrics)
-        print()
-
-        print('------------BnH Profitability Metrics------------')
-        print(bnh_profitability_metrics)
-        print()
-
-        print('-----------------Error Metrics----------------')
+        print('--------------------Error metrics------------------')
         print(error_metrics_report)
         print()
 
-        print('-------------Profitability Metrics-----------')
+        print('----------------Profitability metrics--------------')
         print(profitability_metrics_report)
         print()
 

@@ -8,7 +8,6 @@ import pandas as pd
 
 from sklearn.model_selection import PredefinedSplit, GridSearchCV
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import accuracy_score, f1_score, confusion_matrix, precision_score, recall_score
 
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -48,7 +47,7 @@ class Backtester:
         self.bnh_policy = AllInOutPolicy()
         self.bnh_portfolio = BacktestPortfolio()
 
-        predictions = np.ones(len(self.y[start:end]), dtype = int)
+        predictions = pd.Series(np.ones(len(self.y[start:end]), dtype = int))
         signals = self.bnh_policy.generate_signals(predictions)
 
         self.bnh_portfolio.calc_error_metrics(predictions, y_true)
@@ -98,7 +97,6 @@ class Backtester:
 
             self.models[model_name].fit(X_train, y_train, batch_size = 100, epochs = 100, verbose = 0)
 
-            #predictions = self.model.predict(X_test)[:, 0]
             predicted_probs = self.models[model_name].predict(X_test)[:, 0]
             P = [1 if p >= 0.5 else 0 for p in predicted_probs]
 
@@ -109,7 +107,7 @@ class Backtester:
         
         progress_bar(n, n, prefix = model_name + ':', length = 20)
 
-        self.predictions[model_name] = list(itertools.chain.from_iterable(self.predictions[model_name]))
+        self.predictions[model_name] = pd.Series(list(itertools.chain.from_iterable(self.predictions[model_name])))
     
     def plot_CR(self):
         plt.plot(self.bnh_portfolio.cumulative_return, label = 'Buy & Hold')
@@ -137,6 +135,13 @@ class Backtester:
             #print(self.models[model_name])
             self._predict(model_name)
 
+            #print(self.predictions[model_name])
+
+            #self._PT_test(self.predictions[model_name], y_true)
+
+
+
+
             signals = self.policy.generate_signals(self.predictions[model_name])
 
             self.portfolios[model_name].calc_error_metrics(self.predictions[model_name], y_true)
@@ -144,23 +149,26 @@ class Backtester:
 
         self._benchmark_metrics()
     
-    def report(self):
+    def report(self, to_file = ''):
         start = self.backtest_periods[0]['Test'][0]
         end = self.backtest_periods[-1]['Test'][1]
 
-        error_metrics_report = pd.DataFrame([self.bnh_portfolio.error_metrics] + [self.portfolios[model_name].error_metrics for model_name in self.portfolios.keys()], columns = ['Accuracy', 'Precision', 'Recall', 'F1 Score'], index = ['Buy & Hold'] + [model_name for model_name in self.models.keys()])
+        error_metrics_report = pd.DataFrame([self.bnh_portfolio.error_metrics] + [self.portfolios[model_name].error_metrics for model_name in self.portfolios.keys()], columns = ['Accuracy', 'Precision', 'Recall', 'F1 Score', 'PT p-value'], index = ['Buy & Hold'] + [model_name for model_name in self.models.keys()])
         profitability_metrics_report = pd.DataFrame([self.bnh_portfolio.profitability_metrics] + [self.portfolios[model_name].profitability_metrics for model_name in self.portfolios.keys()], columns = ['CR', 'AR', 'AV', 'SR'], index = ['Buy & Hold'] + [model_name for model_name in self.models.keys()])
 
         print('\n\n===========Performance metrics for {}==========='.format(self.asset_name))
         print('Testing period: {} to {}'.format(self.X.index[start], self.X.index[end - 1]))
         print('Models tested: {}\n'.format(len(self.models)))
 
-        print('--------------------Error metrics------------------')
+        print('---------------------------Error metrics-----------------------')
         print(error_metrics_report)
         print()
 
         print('----------------Profitability metrics--------------')
         print(profitability_metrics_report)
         print()
+
+        #error_metrics_report.to_csv(to_file + '_error_metrics.csv')
+        #profitability_metrics_report.to_csv(to_file + '_profitability_metrics.csv')
 
         self.plot_CR()

@@ -3,6 +3,7 @@
 
 import numpy as np
 import pandas as pd
+from scipy.stats import norm
 
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
@@ -12,6 +13,27 @@ class BacktestPortfolio:
 
         self.error_metrics = None
         self.performance_metrics = None
+    
+    def _PT_test(self, predictions, y_true, alpha = 0.05):
+        n = len(y_true)
+        pyz = accuracy_score(predictions, y_true)
+
+        py = len(y_true[y_true == 1].dropna()) / n
+        pz = len(predictions[predictions == 1].dropna()) / n
+
+        p_star = py * pz + (1 - py) * (1 - pz)
+        u = (p_star * (1 - p_star) / n)
+
+        A = (((2 * pz - 1) ** 2) * py * (1 - py)) / n
+        B = (((2 * py - 1) ** 2) * pz * (1 - pz)) / n
+        C = (4 * py * pz * (1 - py) * (1 - pz)) / (n ** 2)
+
+        w = A + B + C
+
+        PT = (pyz - p_star) / np.sqrt(u - w)
+        p_value = 1 - norm.cdf(PT)
+
+        return p_value
     
     def _realized_returns(self, signals, returns):
         self.realized_returns = np.multiply(signals, np.array(returns))
@@ -53,8 +75,9 @@ class BacktestPortfolio:
         self.precision = precision_score(predictions, y_true)
         self.recall = recall_score(predictions, y_true)
         self.f1 = f1_score(predictions, y_true)
+        self.pt_pval = self._PT_test(predictions, y_true)
 
-        self.error_metrics = np.array([self.accuracy, self.precision, self.recall, self.f1])
+        self.error_metrics = np.array([self.accuracy, self.precision, self.recall, self.f1, self.pt_pval])
     
     def calc_profitability_metrics(self, signals, returns):
         self._realized_returns(signals, returns)

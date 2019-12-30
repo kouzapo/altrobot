@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import itertools
+import json
 
 import numpy as np
 import pandas as pd
@@ -15,18 +16,18 @@ from matplotlib import style
 
 from policy import AllInOutPolicy
 from portfolio import BacktestPortfolio
-from utils import progress_bar
+from utils import progress_bar, load_model
 
 style.use('ggplot')
 
 class Backtester:
-    def __init__(self, X, y, returns, asset_name, models, policy):
+    def __init__(self, X, y, returns, asset_name, model_names, policy):
         self.X = X
         self.y = y
         self.returns = returns
         self.asset_name = asset_name
 
-        self.models = models
+        self.model_names = model_names
         self.policy = policy
 
         self.backtest_periods = []
@@ -34,8 +35,8 @@ class Backtester:
         #self.portfolio = BacktestPortfolio()
         #self.predictions = []
 
-        self.portfolios = {model_name: BacktestPortfolio() for model_name in self.models.keys()}
-        self.predictions = {model_name: [] for model_name in self.models.keys()}
+        #self.portfolios = {model_name: BacktestPortfolio() for model_name in self.models.keys()}
+        #self.predictions = {model_name: [] for model_name in self.models.keys()}
     
     def _benchmark_metrics(self):
         start = self.backtest_periods[0]['Test'][0]
@@ -80,6 +81,14 @@ class Backtester:
         n = len(self.backtest_periods)
         i = 0
 
+        print('Loading {}...'.format(model_name), end = '\r')
+        model = load_model(model_name)
+        print('Loading {}... Done'.format(model_name))
+
+        print('Compiling {}...'.format(model_name), end = '\r')
+        model.compile(optimizer = 'sgd', loss = 'binary_crossentropy', metrics = ['accuracy'])
+        print('Compiling {}... Done'.format(model_name))
+
         progress_bar(0, n, prefix = model_name + ':', length = 20)
 
         for period in self.backtest_periods:
@@ -95,9 +104,9 @@ class Backtester:
             X_train = StandardScaler().fit_transform(X_train)
             X_test = StandardScaler().fit_transform(X_test)
 
-            self.models[model_name].fit(X_train, y_train, batch_size = 100, epochs = 100, verbose = 0)
+            model.fit(X_train, y_train, batch_size = 100, epochs = 100, verbose = 0)
 
-            predicted_probs = self.models[model_name].predict(X_test)[:, 0]
+            predicted_probs = model.predict(X_test)[:, 0]
             P = [1 if p >= 0.5 else 0 for p in predicted_probs]
 
             self.predictions[model_name].append(P)
@@ -106,6 +115,7 @@ class Backtester:
             i += 1
         
         progress_bar(n, n, prefix = model_name + ':', length = 20)
+        print()
 
         self.predictions[model_name] = pd.Series(list(itertools.chain.from_iterable(self.predictions[model_name])))
     
@@ -122,53 +132,73 @@ class Backtester:
 
         plt.show()
     
-    def test(self):
+    def test(self, n):
         start = self.backtest_periods[0]['Test'][0]
         end = self.backtest_periods[-1]['Test'][1]
 
         y_true = self.y[start:end]
         returns = self.returns[start:end]
 
-        print('Training {} model(s):\n'.format(len(self.models)))
-        
-        for model_name in self.models.keys():
-            #print(self.models[model_name])
-            self._predict(model_name)
-
-            #print(self.predictions[model_name])
-
-            #self._PT_test(self.predictions[model_name], y_true)
-
-
-
-
-            signals = self.policy.generate_signals(self.predictions[model_name])
-
-            self.portfolios[model_name].calc_error_metrics(self.predictions[model_name], y_true)
-            self.portfolios[model_name].calc_profitability_metrics(signals, returns)
-
         self._benchmark_metrics()
+
+        print('Training {} model(s) {} time(s) each:\n'.format(len(self.model_names), n))
+
+        for i in range(n):
+            self.portfolios = {model_name: BacktestPortfolio() for model_name in self.model_names}
+            self.predictions = {model_name: [] for model_name in self.model_names}
+
+            for model_name in self.model_names:
+                self._predict(model_name)
+
+                signals = self.policy.generate_signals(self.predictions[model_name])
+
+                self.portfolios[model_name].calc_error_metrics(self.predictions[model_name], y_true)
+                self.portfolios[model_name].calc_profitability_metrics(signals, returns)
+
+            print()
+            
+            error_metrics_report = pd.DataFrame([self.bnh_portfolio.error_metrics] + [self.portfolios[model_name].error_metrics for model_name in self.model_names], columns = ['Accuracy', 'Precision', 'Recall', 'F1 Score', 'PT p-value'], index = ['Buy & Hold'] + [model_name for model_name in self.model_names])
+            profitability_metrics_report = pd.DataFrame([self.bnh_portfolio.profitability_metrics] + [self.portfolios[model_name].profitability_metrics for model_name in self.model_names], columns = ['CR', 'AR', 'AV', 'SR'], index = ['Buy & Hold'] + [model_name for model_name in self.model_names])
+
+            error_metrics_report.index.name = 'Model name'
+            profitability_metrics_report.index.name = 'Model name'
+            
+            error_metrics_report.to_csv(self.asset_name + '_acc_' + str(i) + '.csv')
+            profitability_metrics_report.to_csv(self.asset_name + '_prof_' + str(i) + '.csv')
     
-    def report(self, to_file = ''):
+    def report(self, n):
         start = self.backtest_periods[0]['Test'][0]
         end = self.backtest_periods[-1]['Test'][1]
 
-        error_metrics_report = pd.DataFrame([self.bnh_portfolio.error_metrics] + [self.portfolios[model_name].error_metrics for model_name in self.portfolios.keys()], columns = ['Accuracy', 'Precision', 'Recall', 'F1 Score', 'PT p-value'], index = ['Buy & Hold'] + [model_name for model_name in self.models.keys()])
-        profitability_metrics_report = pd.DataFrame([self.bnh_portfolio.profitability_metrics] + [self.portfolios[model_name].profitability_metrics for model_name in self.portfolios.keys()], columns = ['CR', 'AR', 'AV', 'SR'], index = ['Buy & Hold'] + [model_name for model_name in self.models.keys()])
+        #error_metrics_report = pd.DataFrame([self.bnh_portfolio.error_metrics] + [self.portfolios[model_name].error_metrics for model_name in self.portfolios.keys()], columns = ['Accuracy', 'Precision', 'Recall', 'F1 Score', 'PT p-value'], index = ['Buy & Hold'] + [model_name for model_name in self.models.keys()])
+        #profitability_metrics_report = pd.DataFrame([self.bnh_portfolio.profitability_metrics] + [self.portfolios[model_name].profitability_metrics for model_name in self.portfolios.keys()], columns = ['CR', 'AR', 'AV', 'SR'], index = ['Buy & Hold'] + [model_name for model_name in self.models.keys()])
+
+        acc_concat = pd.concat([pd.read_csv('^GSPC_acc_' + str(i) + '.csv', index_col = 'Model name') for i in range(n)])
+        acc_groupby = acc_concat.groupby(acc_concat.index)
+
+        perf_concat = pd.concat([pd.read_csv('^GSPC_prof_' + str(i) + '.csv', index_col = 'Model name') for i in range(n)])
+        perf_groupby = perf_concat.groupby(perf_concat.index)
+
+        error_metrics_report = acc_groupby.mean()
+        profitability_metrics_report = perf_groupby.mean()
+
+
+
+
 
         print('\n\n===========Performance metrics for {}==========='.format(self.asset_name))
-        print('Testing period: {} to {}'.format(self.X.index[start], self.X.index[end - 1]))
-        print('Models tested: {}\n'.format(len(self.models)))
+        print('Testing period: {} - {}'.format(self.X.index[start], self.X.index[end - 1]))
+        print('Models tested: {}\n'.format(len(self.model_names)))
 
-        print('---------------------------Error metrics-----------------------')
+        print('--------------------------Error metrics------------------------')
         print(error_metrics_report)
         print()
 
-        print('----------------Profitability metrics--------------')
+        print('----------------Profitability metrics-------------')
         print(profitability_metrics_report)
         print()
 
-        #error_metrics_report.to_csv(to_file + '_error_metrics.csv')
-        #profitability_metrics_report.to_csv(to_file + '_profitability_metrics.csv')
+        #error_metrics_report.to_csv(self.asset_name + '_acc.csv')
+        #profitability_metrics_report.to_csv(self.asset_name + '_perf.csv')
 
-        self.plot_CR()
+        #self.plot_CR()

@@ -17,7 +17,7 @@ class FeatureConstructor:
         close = self.dataset['Adj Close']
         close.index = self.dataset['Date']
 
-        returns = close.pct_change().dropna()[start:]
+        returns = close.pct_change().dropna()[start:end]
         returns = returns.shift(-1).dropna()
 
         return returns
@@ -51,9 +51,6 @@ class FeatureConstructor:
         start = self.dates[0]
         end = self.dates[1]
 
-        start_i = self.dataset['Date'][self.dataset['Date'] == start].index[0]
-        end_i = self.dataset['Date'][self.dataset['Date'] == end].index[0]
-
         close = self.dataset['Adj Close']
         high = self.dataset['High']
         low = self.dataset['Low']
@@ -62,31 +59,20 @@ class FeatureConstructor:
         high.index = self.dataset['Date']
         low.index = self.dataset['Date']
 
-        rsi = ta.momentum.RSIIndicator(close).rsi()
-        macd = ta.trend.MACD(close).macd_diff()
-        williams_r = ta.momentum.WilliamsRIndicator(high, low, close).wr()
-        stoch_osc = ta.momentum.StochIndicator(high, low, close, d_n = 1).stoch()
-        aroon = ta.trend.AroonIndicator(close).aroon_indicator()
-        rate_of_change = ta.momentum.ROCIndicator(close, n = 1).roc()
-        bollinger_bands = ta.volatility.BollingerBands(close).bollinger_mavg()
-        parabolic_sar = ta.trend.PSARIndicator(high, low, close).psar()
-        adx = ta.trend.ADXIndicator(high, low, close).adx()
-
         X = pd.DataFrame()
 
-        X['RSI'] = rsi
-        X['MACD'] = macd
-        X['Williams %R'] = williams_r
-        X['Stoc. Osc.'] = stoch_osc
-        #X['Aroon'] = aroon
-        X['ROC'] = rate_of_change
-        X['Bol. Bands'] = bollinger_bands
-        X['Par. SAR'] = parabolic_sar
-        X['ADX'] = adx
+        X['RSI'] = ta.momentum.RSIIndicator(close).rsi()
+        X['MACD'] = ta.trend.MACD(close).macd_diff()
+        X['Williams %R'] = ta.momentum.WilliamsRIndicator(high, low, close).wr()
+        X['Stoc. Osc.'] = ta.momentum.StochasticOscillator(high, low, close, d_n = 1).stoch()
+        #X['Aroon'] = ta.trend.AroonIndicator(close).aroon_indicator()
+        X['ROC'] = ta.momentum.ROCIndicator(close, n = 1).roc()
+        X['Bol. Bands'] = ta.volatility.BollingerBands(close).bollinger_mavg()
+        X['Par. SAR'] = ta.trend.PSARIndicator(high, low, close).psar()
+        X['ADX'] = ta.trend.ADXIndicator(high, low, close).adx()
 
         X = X.loc[start:end]
 
-        #print(X)
         return X
 
     def run_preprocessing(self):

@@ -190,15 +190,15 @@ class Backtester:
         print('Testing period: {} - {}'.format(self.X.index[start], self.X.index[end - 1]))
         print('Models tested: {}\n'.format(len(self.model_names)))
 
-        print('--------------------------Error metrics------------------------')
+        print('---------------------------Error metrics-------------------------')
         print(error_metrics_report)
         print()
 
-        print('----------------Profitability metrics-------------')
+        print('------------------Profitability metrics--------------')
         print(profitability_metrics_report)
         print()
 
-        #error_metrics_report.to_csv(self.asset_name + '_acc.csv')
-        #profitability_metrics_report.to_csv(self.asset_name + '_perf.csv')
+        error_metrics_report.to_csv(self.asset_name + '_acc.csv')
+        profitability_metrics_report.to_csv(self.asset_name + '_prof.csv')
 
         #self.plot_CR()

@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import itertools
-import json
 
 import numpy as np
 import pandas as pd
@@ -163,20 +162,17 @@ class Backtester:
             error_metrics_report.index.name = 'Model name'
             profitability_metrics_report.index.name = 'Model name'
             
-            error_metrics_report.to_csv(self.asset_name + '_acc_' + str(i) + '.csv')
-            profitability_metrics_report.to_csv(self.asset_name + '_prof_' + str(i) + '.csv')
+            error_metrics_report.to_csv('backtest_results/' + self.asset_name + '_acc_' + str(i) + '.csv')
+            profitability_metrics_report.to_csv('backtest_results/' + self.asset_name + '_prof_' + str(i) + '.csv')
     
     def report(self, n):
         start = self.backtest_periods[0]['Test'][0]
         end = self.backtest_periods[-1]['Test'][1]
 
-        #error_metrics_report = pd.DataFrame([self.bnh_portfolio.error_metrics] + [self.portfolios[model_name].error_metrics for model_name in self.portfolios.keys()], columns = ['Accuracy', 'Precision', 'Recall', 'F1 Score', 'PT p-value'], index = ['Buy & Hold'] + [model_name for model_name in self.models.keys()])
-        #profitability_metrics_report = pd.DataFrame([self.bnh_portfolio.profitability_metrics] + [self.portfolios[model_name].profitability_metrics for model_name in self.portfolios.keys()], columns = ['CR', 'AR', 'AV', 'SR'], index = ['Buy & Hold'] + [model_name for model_name in self.models.keys()])
-
-        acc_concat = pd.concat([pd.read_csv('^GSPC_acc_' + str(i) + '.csv', index_col = 'Model name') for i in range(n)])
+        acc_concat = pd.concat([pd.read_csv('backtest_results/' + self.asset_name + '_acc_' + str(i) + '.csv', index_col = 'Model name') for i in range(n)])
         acc_groupby = acc_concat.groupby(acc_concat.index)
 
-        perf_concat = pd.concat([pd.read_csv('^GSPC_prof_' + str(i) + '.csv', index_col = 'Model name') for i in range(n)])
+        perf_concat = pd.concat([pd.read_csv('backtest_results/' + self.asset_name + '_prof_' + str(i) + '.csv', index_col = 'Model name') for i in range(n)])
         perf_groupby = perf_concat.groupby(perf_concat.index)
 
         error_metrics_report = acc_groupby.mean()
@@ -186,7 +182,7 @@ class Backtester:
 
 
 
-        print('\n\n===========Performance metrics for {}==========='.format(self.asset_name))
+        print('\n===========Performance metrics for {}==========='.format(self.asset_name))
         print('Testing period: {} - {}'.format(self.X.index[start], self.X.index[end - 1]))
         print('Models tested: {}\n'.format(len(self.model_names)))
 
@@ -198,7 +194,7 @@ class Backtester:
         print(profitability_metrics_report)
         print()
 
-        error_metrics_report.to_csv(self.asset_name + '_acc.csv')
-        profitability_metrics_report.to_csv(self.asset_name + '_prof.csv')
+        error_metrics_report.to_csv('backtest_results/' + self.asset_name + '_acc.csv')
+        profitability_metrics_report.to_csv('backtest_results/' + self.asset_name + '_prof.csv')
 
-        #self.plot_CR()
+        self.plot_CR()

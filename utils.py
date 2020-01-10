@@ -21,7 +21,7 @@ def banner():
             print(i.splitlines()[0])
 
 def load_model(model_name):
-    with open(model_name + '.json') as f:
+    with open('keras_models/' + model_name + '.json') as f:
         return model_from_json(json.load(f))
 
 def progress_bar(iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '#'):

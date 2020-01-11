@@ -6,10 +6,12 @@ import pandas as pd
 import ta
 
 class FeatureConstructor:
-    def __init__(self, dataset, dates):
+    def __init__(self, dataset, testing_period, training_size):
+        train_start = dataset['Date'][dataset['Date'] == testing_period[0]].index[0] - training_size
+
         self.dataset = dataset
-        self.dates = dates
-    
+        self.dates = (dataset['Date'].iloc[train_start], testing_period[1])
+        
     def _returns(self):
         start = self.dates[0]
         end = self.dates[1]
@@ -76,7 +78,9 @@ class FeatureConstructor:
         return X
 
     def run_preprocessing(self):
-        #X = self._three_past_closing()
+        start = self.dates[0]
+        end = self.dates[1]
+
         X = self._technical_indicators()[:-1]
 
         returns = self._returns()

@@ -53,23 +53,14 @@ class Backtester:
         self.bnh_portfolio.calc_error_metrics(predictions, y_true)
         self.bnh_portfolio.calc_profitability_metrics(signals, returns)
     
-    def generate_periods(self, split, single_split = True, window = -1):
-        train_start = split['Train'][0]
-        train_end = split['Train'][1]
-        test_start = split['Test'][0]
-        test_end = split['Test'][1]
-        
-        if single_split:
-            self.backtest_periods.append({'Train': (train_start, train_end), 'Test': (test_start, test_end)})
-        
-        else:
-            i = train_start
-            training_days = train_end - train_start
+    def generate_periods(self, training_size, window = -1):
+        i = 0
+        n = len(self.X)
             
-            while i + training_days + window <= test_end:
-                self.backtest_periods.append({'Train': (i, i + training_days), 'Test': (i + training_days, i + training_days + window)})
-                
-                i += window
+        while i + training_size + window <= n:
+            self.backtest_periods.append({'Train': (i, i + training_size), 'Test': (i + training_size, i + training_size + window)})
+            
+            i += window
 
         self.backtest_periods[-1]['Test'] = (self.backtest_periods[-1]['Test'][0], len(self.X))
     
@@ -98,7 +89,6 @@ class Backtester:
             y_train = y[train_i[0]:train_i[1]]
 
             X_test = X[test_i[0]:test_i[1]]
-            y_test = y[test_i[0]:test_i[1]]
 
             X_train = StandardScaler().fit_transform(X_train)
             X_test = StandardScaler().fit_transform(X_test)

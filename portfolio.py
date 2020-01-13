@@ -22,7 +22,7 @@ class BacktestPortfolio:
         pz = len(predictions[predictions == 1].dropna()) / n
 
         p_star = py * pz + (1 - py) * (1 - pz)
-        u = (p_star * (1 - p_star) / n)
+        u = p_star * (1 - p_star) / n
 
         A = (((2 * pz - 1) ** 2) * py * (1 - py)) / n
         B = (((2 * py - 1) ** 2) * pz * (1 - pz)) / n
@@ -41,9 +41,7 @@ class BacktestPortfolio:
     def _CR(self, signals, returns):
         cumulative_return = [1]
 
-        A = zip(signals, returns)
-
-        for i in A:
+        for i in zip(signals, returns):
             s = i[0]
             r = i[1]
 
@@ -51,7 +49,7 @@ class BacktestPortfolio:
 
             cumulative_return.append(cr + (cr * s * r))
         
-        self.cumulative_return = pd.DataFrame(cumulative_return) - 1
+        self.cumulative_return = pd.Series(cumulative_return) - 1
     
     def _AR(self, N):
         CR = self.cumulative_return.iloc[-1]
@@ -77,7 +75,7 @@ class BacktestPortfolio:
         self.f1 = f1_score(predictions, y_true)
         self.pt_pval = self._PT_test(predictions, y_true)
 
-        self.error_metrics = np.array([self.accuracy, self.precision, self.recall, self.f1, self.pt_pval])
+        self.error_metrics = np.array([self.accuracy, self.precision, self.recall, self.f1, round(self.pt_pval, 6)])
     
     def calc_profitability_metrics(self, signals, returns):
         self._realized_returns(signals, returns)

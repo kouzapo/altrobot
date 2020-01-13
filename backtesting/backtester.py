@@ -38,8 +38,8 @@ class Backtester:
         #self.predictions = {model_name: [] for model_name in self.models.keys()}
     
     def _benchmark_metrics(self):
-        start = self.backtest_periods[0]['Test'][0]
-        end = self.backtest_periods[-1]['Test'][1]
+        start = self.backtest_periods[0]['test'][0]
+        end = self.backtest_periods[-1]['test'][1]
 
         y_true = self.y[start:end]
         returns = self.returns[start:end]
@@ -58,11 +58,11 @@ class Backtester:
         n = len(self.X)
             
         while i + training_size + window <= n:
-            self.backtest_periods.append({'Train': (i, i + training_size), 'Test': (i + training_size, i + training_size + window)})
+            self.backtest_periods.append({'train': (i, i + training_size), 'test': (i + training_size, i + training_size + window)})
             
             i += window
 
-        self.backtest_periods[-1]['Test'] = (self.backtest_periods[-1]['Test'][0], len(self.X))
+        self.backtest_periods[-1]['test'] = (self.backtest_periods[-1]['test'][0], len(self.X))
     
     def _predict(self, model_name):
         X = self.X
@@ -82,8 +82,8 @@ class Backtester:
         progress_bar(0, n, prefix = model_name + ':', length = 20)
 
         for period in self.backtest_periods:
-            train_i = period['Train']
-            test_i = period['Test']
+            train_i = period['train']
+            test_i = period['test']
 
             X_train = X[train_i[0]:train_i[1]]
             y_train = y[train_i[0]:train_i[1]]
@@ -122,8 +122,8 @@ class Backtester:
         plt.show()
     
     def test(self, n):
-        start = self.backtest_periods[0]['Test'][0]
-        end = self.backtest_periods[-1]['Test'][1]
+        start = self.backtest_periods[0]['test'][0]
+        end = self.backtest_periods[-1]['test'][1]
 
         y_true = self.y[start:end]
         returns = self.returns[start:end]
@@ -156,8 +156,8 @@ class Backtester:
             profitability_metrics_report.to_csv('backtest_results/' + self.asset_name + '_prof_' + str(i) + '.csv')
     
     def report(self, n):
-        start = self.backtest_periods[0]['Test'][0]
-        end = self.backtest_periods[-1]['Test'][1]
+        start = self.backtest_periods[0]['test'][0]
+        end = self.backtest_periods[-1]['test'][1]
 
         acc_concat = pd.concat([pd.read_csv('backtest_results/' + self.asset_name + '_acc_' + str(i) + '.csv', index_col = 'Model name') for i in range(n)])
         acc_groupby = acc_concat.groupby(acc_concat.index)

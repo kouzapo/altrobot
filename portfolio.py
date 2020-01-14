@@ -53,20 +53,14 @@ class BacktestPortfolio:
     
     def _AR(self, N):
         CR = self.cumulative_return.iloc[-1]
-        
-        annualized_return = np.power(1 + float(CR), 252 / N) - 1
 
-        self.annualized_return = annualized_return
+        self.annualized_return = np.power(1 + float(CR), 252 / N) - 1
     
     def _AV(self):
-        annualized_volatiliy = float(self.realized_returns.std() * np.sqrt(252))
-
-        self.annualized_volatiliy = annualized_volatiliy
+        self.annualized_volatiliy = float(self.realized_returns.std() * np.sqrt(252))
     
     def _SR(self):
-        sharpe_ratio = self.annualized_return / self.annualized_volatiliy
-
-        self.sharpe_ratio = sharpe_ratio
+        self.sharpe_ratio = self.annualized_return / self.annualized_volatiliy
     
     def calc_error_metrics(self, predictions, y_true):
         self.accuracy = accuracy_score(predictions, y_true)

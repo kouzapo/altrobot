@@ -30,12 +30,6 @@ class Backtester:
         self.policy = policy
 
         self.backtest_periods = []
-
-        #self.portfolio = BacktestPortfolio()
-        #self.predictions = []
-
-        #self.portfolios = {model_name: BacktestPortfolio() for model_name in self.models.keys()}
-        #self.predictions = {model_name: [] for model_name in self.models.keys()}
     
     def _benchmark_metrics(self):
         start = self.backtest_periods[0]['test'][0]
@@ -44,11 +38,10 @@ class Backtester:
         y_true = self.y[start:end]
         returns = self.returns[start:end]
 
-        self.bnh_policy = AllInOutPolicy()
         self.bnh_portfolio = BacktestPortfolio()
 
-        predictions = pd.Series(np.ones(len(self.y[start:end]), dtype = int))
-        signals = self.bnh_policy.generate_signals(predictions)
+        predictions = pd.Series(np.ones(len(y_true), dtype = int))
+        signals = self.policy.generate_signals(predictions)
 
         self.bnh_portfolio.calc_error_metrics(predictions, y_true)
         self.bnh_portfolio.calc_profitability_metrics(signals, returns)
@@ -65,9 +58,6 @@ class Backtester:
         self.backtest_periods[-1]['test'] = (self.backtest_periods[-1]['test'][0], len(self.X))
     
     def _predict(self, model_name):
-        X = self.X
-        y = self.y
-
         n = len(self.backtest_periods)
         i = 0
 
@@ -85,10 +75,10 @@ class Backtester:
             train_i = period['train']
             test_i = period['test']
 
-            X_train = X[train_i[0]:train_i[1]]
-            y_train = y[train_i[0]:train_i[1]]
+            X_train = self.X[train_i[0]:train_i[1]]
+            y_train = self.y[train_i[0]:train_i[1]]
 
-            X_test = X[test_i[0]:test_i[1]]
+            X_test = self.X[test_i[0]:test_i[1]]
 
             X_train = StandardScaler().fit_transform(X_train)
             X_test = StandardScaler().fit_transform(X_test)
@@ -96,9 +86,8 @@ class Backtester:
             model.fit(X_train, y_train, batch_size = 100, epochs = 100, verbose = 0)
 
             predicted_probs = model.predict(X_test)[:, 0]
-            P = [1 if p >= 0.5 else 0 for p in predicted_probs]
 
-            self.predictions[model_name].append(P)
+            self.predictions[model_name].append([1 if p >= 0.5 else 0 for p in predicted_probs])
 
             progress_bar(i, n, prefix = model_name + ':', length = 20)
             i += 1
@@ -168,6 +157,9 @@ class Backtester:
         error_metrics_report = acc_groupby.mean()
         profitability_metrics_report = perf_groupby.mean()
 
+        error_metrics_report.to_csv('backtest_results/' + self.asset_name + '_acc.csv')
+        profitability_metrics_report.to_csv('backtest_results/' + self.asset_name + '_prof.csv')
+
 
 
 
@@ -183,8 +175,5 @@ class Backtester:
         print('------------------Profitability metrics--------------')
         print(profitability_metrics_report)
         print()
-
-        error_metrics_report.to_csv('backtest_results/' + self.asset_name + '_acc.csv')
-        profitability_metrics_report.to_csv('backtest_results/' + self.asset_name + '_prof.csv')
 
         self.plot_CR()

@@ -3,7 +3,13 @@
 - Utilizes ML/DL methods for predictions.
 - Exploring various trading strategies in order to maximize profitability.
 
+## Installing
+Clone the project and install the libraries in requirements.txt.
 
+```
+git clone https://github.com/kouzapo/altrobot.git
+pip3 install -r requirements.txt
+```
 
 ## Authors
 

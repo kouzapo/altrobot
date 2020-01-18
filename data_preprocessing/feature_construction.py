@@ -73,7 +73,7 @@ class FeatureConstructor:
         X['Par. SAR'] = ta.trend.PSARIndicator(high, low, close).psar()
         X['ADX'] = ta.trend.ADXIndicator(high, low, close).adx()
 
-        X = X.loc[start:end]
+        X = X.loc[start:end][:-1]
 
         return X
 
@@ -81,7 +81,7 @@ class FeatureConstructor:
         start = self.dates[0]
         end = self.dates[1]
 
-        X = self._technical_indicators()[:-1]
+        X = self._technical_indicators()
 
         returns = self._returns()
         y = self._labels(returns)

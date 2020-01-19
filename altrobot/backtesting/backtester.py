@@ -14,7 +14,7 @@ import matplotlib.dates as mdates
 from matplotlib import style
 
 from policy import AllInOutPolicy
-from portfolio import BacktestPortfolio
+from backtesting.portfolio import BacktestPortfolio
 from utils import progress_bar, load_model
 
 style.use('ggplot')

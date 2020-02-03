@@ -9,7 +9,6 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
 import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 from matplotlib import style
 
 from policy import AllInOutPolicy

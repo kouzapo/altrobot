@@ -105,4 +105,4 @@ venv.bak/
 
 #other
 analyze_data.py
-backtest_results/
+altrobot/backtest_results/

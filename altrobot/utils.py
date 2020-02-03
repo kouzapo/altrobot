@@ -6,12 +6,14 @@ import sys
 import json
 
 import pandas as pd
-import pandas_datareader.data as pdr
+#import pandas_datareader.data as pdr
+from ann_visualizer.visualize import ann_viz
 
 stderr = sys.stderr
 sys.stderr = open(os.devnull, 'w')
 
 from keras.models import model_from_json
+from keras.utils import plot_model
 
 sys.stderr = stderr
 
@@ -34,10 +36,7 @@ def progress_bar(iteration, total, prefix = '', suffix = '', decimals = 1, lengt
     
     if iteration == total:
         print()
-
-def get_data(symbols, start, end):
-    for s in symbols:
-        D = pdr.DataReader(s, 'yahoo', start, end)
-        D.to_csv(s + '.dat')
-
-        print(s)
+    
+def vizualize_model(model):
+    ann_viz(model, title = "")
+    plot_model(model, to_file = 'model.png', show_shapes = True, expand_nested = True, rankdir = 'LR') 

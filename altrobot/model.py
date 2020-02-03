@@ -35,6 +35,5 @@ class Model:
             X_test = StandardScaler().fit_transform(X_test)
 
         predictions = self.best_estimator.predict(X_test)
-        #predictions = self.best_estimator.predict_proba(X_test)[:, 1]
 
         return predictions

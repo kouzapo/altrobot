@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import norm
 
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, f1_score
 
 class BacktestPortfolio:
     def __init__(self):
@@ -59,6 +59,11 @@ class BacktestPortfolio:
     
     def _SR(self):
         self.sharpe_ratio = self.annualized_return / self.annualized_volatiliy
+
+    def _IR(self, returns, bnh_AR):
+        traking_error = float((self.realized_returns - returns).std() * np.sqrt(252))
+
+        self.information_ratio = (self.annualized_return - bnh_AR) / traking_error
     
     def calc_error_metrics(self, predictions, y_true):
         self.accuracy = accuracy_score(predictions, y_true)
@@ -69,12 +74,27 @@ class BacktestPortfolio:
 
         self.error_metrics = np.array([self.accuracy, self.precision, self.recall, self.f1, round(self.pt_pval, 6)])
     
-    def calc_profitability_metrics(self, signals, returns):
+    def calc_profitability_metrics(self, signals, returns, *bnh_AR):
         self._realized_returns(signals, returns)
 
         self._CR(signals, returns)
         self._AR(len(returns))
         self._AV()
         self._SR()
+        
+        if bnh_AR:
+            self._IR(returns, bnh_AR[0])
+        else:
+            self.information_ratio = 0
 
-        self.profitability_metrics = np.array([float(self.cumulative_return.iloc[-1]), self.annualized_return, self.annualized_volatiliy, self.sharpe_ratio])
+        self.profitability_metrics = np.array([float(self.cumulative_return.iloc[-1]), self.annualized_return, self.annualized_volatiliy, self.sharpe_ratio, self.information_ratio])
+    
+    def calc_conf_matrix_prof(self, predictions, y_true, returns):
+        A = pd.DataFrame({'y_true': y_true, 'pred': predictions, 'rets': returns})
+
+        TP = A[(A['y_true'] == 1) & (A['pred'] == 1)]
+        TN = A[(A['y_true'] == 0) & (A['pred'] == 0)]
+        FP = A[(A['y_true'] == 0) & (A['pred'] == 1)]
+        FN = A[(A['y_true'] == 1) & (A['pred'] == 0)]
+
+        self.conf_matrix_prof = np.array([TP['rets'].mean(), TN['rets'].mean(), FP['rets'].mean(), FN['rets'].mean()])

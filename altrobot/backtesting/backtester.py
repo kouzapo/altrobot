@@ -40,11 +40,12 @@ class Backtester:
 
         self.bnh_portfolio = BacktestPortfolio()
 
-        predictions = pd.Series(np.ones(len(y_true), dtype = int))
+        predictions = pd.Series(np.ones(len(y_true), dtype = int), index = self.X.index[start:end])
         signals = self.policy.generate_signals(predictions)
 
         self.bnh_portfolio.calc_error_metrics(predictions, y_true)
         self.bnh_portfolio.calc_profitability_metrics(signals, returns)
+        self.bnh_portfolio.calc_conf_matrix_prof(predictions, y_true, returns)
     
     def generate_periods(self, training_size, window = -1):
         i = 0
@@ -58,6 +59,8 @@ class Backtester:
         self.backtest_periods[-1]['test'] = (self.backtest_periods[-1]['test'][0], len(self.X))
     
     def _predict(self, model_name):
+        start = self.backtest_periods[0]['test'][0]
+        end = self.backtest_periods[-1]['test'][1]
         n = len(self.backtest_periods)
         i = 0
 
@@ -92,7 +95,7 @@ class Backtester:
         progress_bar(n, n, prefix = model_name + ':', length = 20)
         print()
 
-        self.predictions[model_name] = pd.Series(list(itertools.chain.from_iterable(self.predictions[model_name])))
+        self.predictions[model_name] = pd.Series(list(itertools.chain.from_iterable(self.predictions[model_name])), index = self.X.index[start:end])
     
     def plot_CR(self):
         plt.plot(self.bnh_portfolio.cumulative_return, label = 'Buy & Hold')
@@ -128,34 +131,43 @@ class Backtester:
                 signals = self.policy.generate_signals(self.predictions[model_name])
 
                 self.portfolios[model_name].calc_error_metrics(self.predictions[model_name], y_true)
-                self.portfolios[model_name].calc_profitability_metrics(signals, returns)
+                self.portfolios[model_name].calc_profitability_metrics(signals, returns, self.bnh_portfolio.annualized_return)
+                self.portfolios[model_name].calc_conf_matrix_prof(self.predictions[model_name], y_true, returns)
 
             print()
             
-            error_metrics_report = pd.DataFrame([self.bnh_portfolio.error_metrics] + [self.portfolios[model_name].error_metrics for model_name in self.model_names], columns = ['Accuracy', 'Precision', 'Recall', 'F1 Score', 'PT p-value'], index = ['Buy & Hold'] + [model_name for model_name in self.model_names])
-            profitability_metrics_report = pd.DataFrame([self.bnh_portfolio.profitability_metrics] + [self.portfolios[model_name].profitability_metrics for model_name in self.model_names], columns = ['CR', 'AR', 'AV', 'SR'], index = ['Buy & Hold'] + [model_name for model_name in self.model_names])
+            error_metrics_report = pd.DataFrame([self.bnh_portfolio.error_metrics] + [self.portfolios[model_name].error_metrics for model_name in self.model_names], columns = ['Accuracy', 'Precision', 'Recall', 'F1 Score', 'PT p-value'], index = ['Buy & Hold'] + self.model_names)
+            profitability_metrics_report = pd.DataFrame([self.bnh_portfolio.profitability_metrics] + [self.portfolios[model_name].profitability_metrics for model_name in self.model_names], columns = ['CR', 'AR', 'AV', 'SR', 'IR'], index = ['Buy & Hold'] + self.model_names)
+            conf_matrix_prof_report = pd.DataFrame([self.bnh_portfolio.conf_matrix_prof] + [self.portfolios[model_name].conf_matrix_prof for model_name in self.model_names], columns = ['TP', 'TN', 'FP', 'FN'], index = ['Buy & Hold'] + self.model_names)
 
             error_metrics_report.index.name = 'Model name'
             profitability_metrics_report.index.name = 'Model name'
+            conf_matrix_prof_report.index.name = 'Model name'
             
-            error_metrics_report.to_csv('backtest_results/' + self.asset_name + '_acc_' + str(i) + '.csv')
+            error_metrics_report.to_csv('backtest_results/' + self.asset_name + '_err_' + str(i) + '.csv')
             profitability_metrics_report.to_csv('backtest_results/' + self.asset_name + '_prof_' + str(i) + '.csv')
+            conf_matrix_prof_report.to_csv('backtest_results/' + self.asset_name + '_conf_mat_prof_' + str(i) + '.csv')
     
     def report(self, n):
         start = self.backtest_periods[0]['test'][0]
         end = self.backtest_periods[-1]['test'][1]
 
-        acc_concat = pd.concat([pd.read_csv('backtest_results/' + self.asset_name + '_acc_' + str(i) + '.csv', index_col = 'Model name') for i in range(n)])
-        acc_groupby = acc_concat.groupby(acc_concat.index)
+        err_concat = pd.concat([pd.read_csv('backtest_results/' + self.asset_name + '_err_' + str(i) + '.csv', index_col = 'Model name') for i in range(n)])
+        err_groupby = err_concat.groupby(err_concat.index)
 
         perf_concat = pd.concat([pd.read_csv('backtest_results/' + self.asset_name + '_prof_' + str(i) + '.csv', index_col = 'Model name') for i in range(n)])
         perf_groupby = perf_concat.groupby(perf_concat.index)
 
-        error_metrics_report = acc_groupby.mean()
-        profitability_metrics_report = perf_groupby.mean()
+        conf_matrix_prof_concat = pd.concat([pd.read_csv('backtest_results/' + self.asset_name + '_conf_mat_prof_' + str(i) + '.csv', index_col = 'Model name') for i in range(n)])
+        conf_matrix_prof_groupby = conf_matrix_prof_concat.groupby(conf_matrix_prof_concat.index)
 
-        error_metrics_report.to_csv('backtest_results/' + self.asset_name + '_acc.csv')
+        error_metrics_report = err_groupby.mean()
+        profitability_metrics_report = perf_groupby.mean()
+        confusion_matrix_prof_report = conf_matrix_prof_groupby.mean()
+
+        error_metrics_report.to_csv('backtest_results/' + self.asset_name + '_err.csv')
         profitability_metrics_report.to_csv('backtest_results/' + self.asset_name + '_prof.csv')
+        confusion_matrix_prof_report.to_csv('backtest_results/' + self.asset_name + '_conf_mat_prof.csv')
 
 
 
@@ -165,12 +177,16 @@ class Backtester:
         print('Testing period: {} - {}'.format(self.X.index[start], self.X.index[end - 1]))
         print('Models tested: {}\n'.format(len(self.model_names)))
 
-        print('---------------------------Error metrics-------------------------')
+        print('--------------------------Error metrics------------------------')
         print(error_metrics_report)
         print()
 
-        print('------------------Profitability metrics--------------')
+        print('---------------------Profitability metrics------------------')
         print(profitability_metrics_report)
         print()
 
-        self.plot_CR()
+        print('-----------Confusion matrix performance----------')
+        print(confusion_matrix_prof_report)
+        print()
+
+        #self.plot_CR()

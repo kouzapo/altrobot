@@ -67,8 +67,8 @@ class BacktestPortfolio:
     
     def calc_error_metrics(self, predictions, y_true):
         self.accuracy = accuracy_score(predictions, y_true)
-        self.precision = precision_score(predictions, y_true)
-        self.recall = recall_score(predictions, y_true)
+        self.precision = recall_score(predictions, y_true)
+        self.recall = precision_score(predictions, y_true)
         self.f1 = f1_score(predictions, y_true)
         self.pt_pval = self._PT_test(predictions, y_true)
 

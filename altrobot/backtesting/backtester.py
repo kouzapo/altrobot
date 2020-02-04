@@ -45,7 +45,7 @@ class Backtester:
         self.bnh_portfolio.calc_profitability_metrics(signals, returns)
         self.bnh_portfolio.calc_conf_matrix_prof(predictions, y_true, returns)
     
-    def generate_periods(self, training_size, window = -1):
+    def generate_periods(self, training_size, window):
         i = 0
         n = len(self.X)
             
@@ -175,15 +175,15 @@ class Backtester:
         print('Testing period: {} - {}'.format(self.X.index[start], self.X.index[end - 1]))
         print('Models tested: {}\n'.format(len(self.model_names)))
 
-        print('--------------------------Error metrics------------------------')
+        print('---------------------------Error metrics-------------------------')
         print(error_metrics_report)
         print()
 
-        print('---------------------Profitability metrics------------------')
+        print('-----------------------Profitability metrics-------------------')
         print(profitability_metrics_report)
         print()
 
-        print('-----------Confusion matrix performance----------')
+        print('-------------Confusion matrix performance-----------')
         print(confusion_matrix_prof_report)
         print()
 

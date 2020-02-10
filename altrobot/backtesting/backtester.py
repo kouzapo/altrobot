@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import itertools
-
 import numpy as np
 import pandas as pd
 
@@ -85,7 +83,7 @@ class Backtester:
 
             predicted_probs = model.predict(X_test)[:, 0]
 
-            self.predictions[model_name].append([1 if p >= 0.5 else 0 for p in predicted_probs])
+            self.predictions[model_name].extend([1 if p >= 0.5 else 0 for p in predicted_probs])
 
             progress_bar(i, n, prefix = f'{model_name}:', length = 20)
             i += 1
@@ -93,8 +91,8 @@ class Backtester:
         progress_bar(n, n, prefix = f'{model_name}:', length = 20)
         print()
 
-        self.predictions[model_name] = pd.Series(list(itertools.chain.from_iterable(self.predictions[model_name])), index = self.X.index[start:end])
-    
+        self.predictions[model_name] = pd.Series(self.predictions[model_name], index = self.X.index[start:end])
+   
     def plot_CR(self):
         plt.plot(self.bnh_portfolio.cumulative_return, label = 'Buy & Hold')
 

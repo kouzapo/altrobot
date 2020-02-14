@@ -9,10 +9,10 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 
 class BacktestPortfolio:
     def __init__(self):
-        self.error_metrics = None
-        self.performance_metrics = None
+        self.error_metrics = []
+        self.performance_metrics = []
     
-    def _PT_test(self, predictions, y_true, alpha = 0.05):
+    def _PT_test(self, predictions, y_true):
         n = len(y_true)
         pyz = accuracy_score(predictions, y_true)
 

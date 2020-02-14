@@ -36,7 +36,3 @@ def progress_bar(iteration, total, prefix = '', suffix = '', decimals = 1, lengt
     
     if iteration == total:
         print()
-    
-def vizualize_model(model):
-    ann_viz(model, title = "")
-    plot_model(model, to_file = 'model.png', show_shapes = True, expand_nested = True, rankdir = 'LR') 

@@ -106,3 +106,4 @@ venv.bak/
 #other
 analyze_data.py
 altrobot/backtest_results/
+settings.ini

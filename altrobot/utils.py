@@ -6,8 +6,6 @@ import sys
 import json
 
 import pandas as pd
-#import pandas_datareader.data as pdr
-from ann_visualizer.visualize import ann_viz
 
 stderr = sys.stderr
 sys.stderr = open(os.devnull, 'w')

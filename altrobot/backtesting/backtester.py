@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import os
+
 import numpy as np
 import pandas as pd
 
@@ -112,6 +114,9 @@ class Backtester:
 
         y_true = self.y[start:end]
         returns = self.returns[start:end]
+
+        if not os.path.isdir('backtest_results/'):
+            os.mkdir('backtest_results/')
 
         self._benchmark_metrics()
 

@@ -85,6 +85,7 @@ class Backtester:
 
             predicted_probs = model.predict(X_test)[:, 0]
 
+            self.predicted_probs[model_name].extend(list(predicted_probs))
             self.predictions[model_name].extend([1 if p >= 0.5 else 0 for p in predicted_probs])
 
             progress_bar(i, n, prefix = f'{model_name}:', length = 20)
@@ -125,6 +126,7 @@ class Backtester:
         for i in range(n):
             self.portfolios = {model_name: BacktestPortfolio() for model_name in self.model_names}
             self.predictions = {model_name: [] for model_name in self.model_names}
+            self.predicted_probs = {model_name: [] for model_name in self.model_names}
 
             for model_name in self.model_names:
                 self._predict(model_name)

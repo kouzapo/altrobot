@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import norm
 
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, f1_score
 
 class BacktestPortfolio:
     def __init__(self):
@@ -89,6 +89,11 @@ class BacktestPortfolio:
 
         self.profitability_metrics = np.array([float(self.cumulative_return.iloc[-1]), self.annualized_return, self.annualized_volatiliy, self.sharpe_ratio, self.information_ratio])
     
+    def calc_conf_matrix(self, predictions, y_true):
+        conf_matrix = confusion_matrix(predictions, y_true)
+        
+        self.conf_matrix = np.array([conf_matrix[1][1], conf_matrix[0][0], conf_matrix[1][0], conf_matrix[0][1]])
+
     def calc_conf_matrix_prof(self, predictions, y_true, returns):
         A = pd.DataFrame({'y_true': y_true, 'pred': predictions, 'rets': returns})
 

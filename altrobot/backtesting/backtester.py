@@ -43,6 +43,7 @@ class Backtester:
 
         self.bnh_portfolio.calc_error_metrics(predictions, y_true)
         self.bnh_portfolio.calc_profitability_metrics(signals, returns)
+        self.bnh_portfolio.calc_conf_matrix(predictions, y_true)
         self.bnh_portfolio.calc_conf_matrix_prof(predictions, y_true, returns)
     
     def generate_periods(self, training_size, window):
@@ -55,6 +56,29 @@ class Backtester:
             i += window
 
         self.backtest_periods[-1]['test'] = (self.backtest_periods[-1]['test'][0], len(self.X))
+    
+    def _write_reports(self, n):
+        err_concat = pd.concat([pd.read_csv(f'backtest_results/{self.asset_name}_err_{str(i)}.csv', index_col = 'Model name') for i in range(n)])
+        err_groupby = err_concat.groupby(err_concat.index)
+
+        perf_concat = pd.concat([pd.read_csv(f'backtest_results/{self.asset_name}_prof_{str(i)}.csv', index_col = 'Model name') for i in range(n)])
+        perf_groupby = perf_concat.groupby(perf_concat.index)
+
+        conf_matrix_concat = pd.concat([pd.read_csv(f'backtest_results/{self.asset_name}_conf_mat_{str(i)}.csv', index_col = 'Model name') for i in range(n)])
+        conf_matrix_groupby = conf_matrix_concat.groupby(conf_matrix_concat.index)
+
+        conf_matrix_prof_concat = pd.concat([pd.read_csv(f'backtest_results/{self.asset_name}_conf_mat_prof_{str(i)}.csv', index_col = 'Model name') for i in range(n)])
+        conf_matrix_prof_groupby = conf_matrix_prof_concat.groupby(conf_matrix_prof_concat.index)
+
+        error_metrics_report = err_groupby.mean()
+        profitability_metrics_report = perf_groupby.mean()
+        confusion_matrix_report = conf_matrix_groupby.mean()
+        confusion_matrix_prof_report = conf_matrix_prof_groupby.mean()
+
+        error_metrics_report.to_csv(f'backtest_results/{self.asset_name}_err.csv')
+        profitability_metrics_report.to_csv(f'backtest_results/{self.asset_name}_prof.csv')
+        confusion_matrix_report.to_csv(f'backtest_results/{self.asset_name}_conf_mat.csv')
+        confusion_matrix_prof_report.to_csv(f'backtest_results/{self.asset_name}_conf_mat_prof.csv')
     
     def _predict(self, model_name):
         start = self.backtest_periods[0]['test'][0]
@@ -135,42 +159,36 @@ class Backtester:
 
                 self.portfolios[model_name].calc_error_metrics(self.predictions[model_name], y_true)
                 self.portfolios[model_name].calc_profitability_metrics(signals, returns, self.bnh_portfolio.annualized_return)
+                self.portfolios[model_name].calc_conf_matrix(self.predictions[model_name], y_true)
                 self.portfolios[model_name].calc_conf_matrix_prof(self.predictions[model_name], y_true, returns)
 
             print()
             
             error_metrics_report = pd.DataFrame([self.bnh_portfolio.error_metrics] + [self.portfolios[model_name].error_metrics for model_name in self.model_names], columns = ['Accuracy', 'Precision', 'Recall', 'F1 Score', 'PT p-value'], index = ['Buy & Hold'] + self.model_names)
             profitability_metrics_report = pd.DataFrame([self.bnh_portfolio.profitability_metrics] + [self.portfolios[model_name].profitability_metrics for model_name in self.model_names], columns = ['CR', 'AR', 'AV', 'SR', 'IR'], index = ['Buy & Hold'] + self.model_names)
-            conf_matrix_prof_report = pd.DataFrame([self.bnh_portfolio.conf_matrix_prof] + [self.portfolios[model_name].conf_matrix_prof for model_name in self.model_names], columns = ['TP', 'TN', 'FP', 'FN'], index = ['Buy & Hold'] + self.model_names)
+            conf_matrix_report = pd.DataFrame([self.bnh_portfolio.conf_matrix] + [self.portfolios[model_name].conf_matrix for model_name in self.model_names], columns = ['TP', 'TN', 'FP', 'FN'], index = ['Buy & Hold'] + self.model_names)
+            conf_matrix_prof_report = pd.DataFrame([self.bnh_portfolio.conf_matrix_prof] + [self.portfolios[model_name].conf_matrix_prof for model_name in self.model_names], columns = ['TP', 'TN', 'FP', 'FN'], index = ['Buy & Hold'] + self.model_names)            
 
             error_metrics_report.index.name = 'Model name'
             profitability_metrics_report.index.name = 'Model name'
+            conf_matrix_report.index.name = 'Model name'
             conf_matrix_prof_report.index.name = 'Model name'
             
             error_metrics_report.to_csv(f'backtest_results/{self.asset_name}_err_{str(i)}.csv')
             profitability_metrics_report.to_csv(f'backtest_results/{self.asset_name}_prof_{str(i)}.csv')
+            conf_matrix_report.to_csv(f'backtest_results/{self.asset_name}_conf_mat_{str(i)}.csv')
             conf_matrix_prof_report.to_csv(f'backtest_results/{self.asset_name}_conf_mat_prof_{str(i)}.csv')
+        
+        self._write_reports(n)
     
-    def report(self, n):
+    def report(self):
         start = self.backtest_periods[0]['test'][0]
         end = self.backtest_periods[-1]['test'][1]
 
-        err_concat = pd.concat([pd.read_csv(f'backtest_results/{self.asset_name}_err_{str(i)}.csv', index_col = 'Model name') for i in range(n)])
-        err_groupby = err_concat.groupby(err_concat.index)
-
-        perf_concat = pd.concat([pd.read_csv(f'backtest_results/{self.asset_name}_prof_{str(i)}.csv', index_col = 'Model name') for i in range(n)])
-        perf_groupby = perf_concat.groupby(perf_concat.index)
-
-        conf_matrix_prof_concat = pd.concat([pd.read_csv(f'backtest_results/{self.asset_name}_conf_mat_prof_{str(i)}.csv', index_col = 'Model name') for i in range(n)])
-        conf_matrix_prof_groupby = conf_matrix_prof_concat.groupby(conf_matrix_prof_concat.index)
-
-        error_metrics_report = err_groupby.mean()
-        profitability_metrics_report = perf_groupby.mean()
-        confusion_matrix_prof_report = conf_matrix_prof_groupby.mean()
-
-        error_metrics_report.to_csv(f'backtest_results/{self.asset_name}_err.csv')
-        profitability_metrics_report.to_csv(f'backtest_results/{self.asset_name}_prof.csv')
-        confusion_matrix_prof_report.to_csv(f'backtest_results/{self.asset_name}_conf_mat_prof.csv')
+        error_metrics_report = pd.read_csv(f'backtest_results/{self.asset_name}_err.csv', index_col = 'Model name')
+        profitability_metrics_report = pd.read_csv(f'backtest_results/{self.asset_name}_prof.csv', index_col = 'Model name')
+        confusion_matrix_report = pd.read_csv(f'backtest_results/{self.asset_name}_conf_mat.csv', index_col = 'Model name')
+        confusion_matrix_prof_report = pd.read_csv(f'backtest_results/{self.asset_name}_conf_mat_prof.csv', index_col = 'Model name')
 
 
 
@@ -186,6 +204,10 @@ class Backtester:
 
         print('-----------------------Profitability metrics-------------------')
         print(profitability_metrics_report)
+        print()
+
+        print('-------------Confusion matrix-----------')
+        print(confusion_matrix_report)
         print()
 
         print('-------------Confusion matrix performance-----------')

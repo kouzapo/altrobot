@@ -38,7 +38,7 @@ class Backtester:
 
         self.bnh_portfolio = BacktestPortfolio()
 
-        predictions = pd.Series(np.ones(len(y_true), dtype = int), index = self.X.index[start:end])
+        predictions = pd.Series(np.ones(len(y_true), dtype = int), index = self.y.index[start:end])
         signals = self.policy.generate_signals(predictions)
 
         self.bnh_portfolio.calc_error_metrics(predictions, y_true)
@@ -118,7 +118,7 @@ class Backtester:
         progress_bar(n, n, prefix = f'{model_name}:', length = 20)
         print()
 
-        self.predictions[model_name] = pd.Series(self.predictions[model_name], index = self.X.index[start:end])
+        self.predictions[model_name] = pd.Series(self.predictions[model_name], index = self.y.index[start:end])
    
     def plot_CR(self):
         plt.plot(self.bnh_portfolio.cumulative_return, label = 'Buy & Hold')
@@ -195,7 +195,7 @@ class Backtester:
 
 
         print(f'\n===========Performance metrics for {self.asset_name}===========')
-        print(f'Testing period: {self.X.index[start]} - {self.X.index[end - 1]}')
+        print(f'Testing period: {self.y.index[start]} - {self.y.index[end - 1]}')
         print(f'Models tested: {len(self.model_names)}\n')
 
         print('---------------------------Error metrics-------------------------')

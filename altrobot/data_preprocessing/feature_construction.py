@@ -11,6 +11,17 @@ class FeatureConstructor:
 
         self.dataset = dataset
         self.dates = (dataset['Date'].iloc[train_start], testing_period[1])
+    
+    def _reshape_timesteps(self, X, timesteps):
+        start = self.dates[0]
+        end = self.dates[1]
+
+        n_features = X.shape[1]
+
+        C = pd.concat([X.shift(i).dropna()[(timesteps - 1) - i:] for i in range(timesteps)], axis = 1).loc[start:end][:-1]
+        reshaped = np.reshape(C.values, (C.shape[0], timesteps, n_features))
+        
+        return reshaped
         
     def _returns(self):
         start = self.dates[0]
@@ -30,24 +41,6 @@ class FeatureConstructor:
         y[y == -1] = 0
 
         return y
-    
-    def _three_past_closing(self):
-        start = self.dates[0]
-        end = self.dates[1]
-
-        start_i = self.dataset['Date'][self.dataset['Date'] == start].index[0]
-        end_i = self.dataset['Date'][self.dataset['Date'] == end].index[0]
-
-        X = pd.DataFrame()
-
-        X['Adj Close'] = self.dataset['Adj Close']
-        X['Adj Close -1'] = self.dataset['Adj Close'].shift(1)
-        X['Adj Close -2'] = self.dataset['Adj Close'].shift(2)
-
-        X = X[start_i:end_i]
-        X.index = self.dataset['Date'][start_i:end_i]
-
-        return X
     
     def _technical_indicators(self):
         start = self.dates[0]
@@ -72,15 +65,19 @@ class FeatureConstructor:
         X['Par. SAR'] = ta.trend.PSARIndicator(high, low, close).psar()
         X['ADX'] = ta.trend.ADXIndicator(high, low, close).adx()
 
-        X = X.loc[start:end][:-1]
-
         return X
 
-    def run_preprocessing(self):
+    def run_preprocessing(self, archit, timesteps = 0):
         start = self.dates[0]
         end = self.dates[1]
 
-        X = self._technical_indicators()
+        features = self._technical_indicators()
+
+        if archit == 'mlp':
+            X = features.loc[start:end][:-1].values
+            
+        elif archit == 'lstm' and timesteps >= 2:
+            X = self._reshape_timesteps(features, timesteps)
 
         returns = self._returns()
         y = self._labels(returns)

@@ -18,44 +18,35 @@ from utils import progress_bar, load_model
 style.use('ggplot')
 
 class Backtester:
-    def __init__(self, X, y, returns, asset_name, model_names, policy):
-        self.X = X
-        self.y = y
-        self.returns = returns
+    def __init__(self, backtest_subsets, asset_name, model_names, policy):
+        self.backtest_subsets = backtest_subsets
         self.asset_name = asset_name
 
         self.model_names = model_names
         self.policy = policy
 
-        self.backtest_periods = []
+        self.y_true = []
+        self.returns = []
+        self.index = []
+
+        for subset in self.backtest_subsets:
+            self.y_true.extend(list(subset['y_test']))
+            self.returns.extend(list(subset['returns_test']))
+            self.index.extend(list(subset['y_test'].index))
+
+        self.y_true = pd.Series(self.y_true, index = self.index)
+        self.returns = pd.Series(self.returns, index = self.index)
     
     def _benchmark_metrics(self):
-        start = self.backtest_periods[0]['test'][0]
-        end = self.backtest_periods[-1]['test'][1]
-
-        y_true = self.y[start:end]
-        returns = self.returns[start:end]
-
         self.bnh_portfolio = BacktestPortfolio()
 
-        predictions = pd.Series(np.ones(len(y_true), dtype = int), index = self.y.index[start:end])
+        predictions = pd.Series(np.ones(len(self.y_true), dtype = int), index = self.index)
         signals = self.policy.generate_signals(predictions)
 
-        self.bnh_portfolio.calc_error_metrics(predictions, y_true)
-        self.bnh_portfolio.calc_profitability_metrics(signals, returns)
-        self.bnh_portfolio.calc_conf_matrix(predictions, y_true)
-        self.bnh_portfolio.calc_conf_matrix_prof(predictions, y_true, returns)
-    
-    def generate_periods(self, training_size, window):
-        i = 0
-        n = len(self.X)
-            
-        while i + training_size + window <= n:
-            self.backtest_periods.append({'train': (i, i + training_size), 'test': (i + training_size, i + training_size + window)})
-            
-            i += window
-
-        self.backtest_periods[-1]['test'] = (self.backtest_periods[-1]['test'][0], len(self.X))
+        self.bnh_portfolio.calc_error_metrics(predictions, self.y_true)
+        self.bnh_portfolio.calc_profitability_metrics(signals, self.returns)
+        self.bnh_portfolio.calc_conf_matrix(predictions, self.y_true)
+        self.bnh_portfolio.calc_conf_matrix_prof(predictions, self.y_true, self.returns)
     
     def _write_reports(self, n):
         err_concat = pd.concat([pd.read_csv(f'backtest_results/{self.asset_name}_err_{str(i)}.csv', index_col = 'Model name') for i in range(n)])
@@ -81,9 +72,7 @@ class Backtester:
         confusion_matrix_prof_report.to_csv(f'backtest_results/{self.asset_name}_conf_mat_prof.csv')
     
     def _predict(self, model_name):
-        start = self.backtest_periods[0]['test'][0]
-        end = self.backtest_periods[-1]['test'][1]
-        n = len(self.backtest_periods)
+        n = len(self.backtest_subsets)
         i = 0
 
         print('Loading {}...'.format(model_name), end = '\r')
@@ -93,21 +82,10 @@ class Backtester:
 
         progress_bar(0, n, prefix = f'{model_name}:', length = 20)
 
-        for period in self.backtest_periods:
-            train_i = period['train']
-            test_i = period['test']
+        for subset in self.backtest_subsets:
+            model.fit(subset['X_train'], subset['y_train'], batch_size = 100, epochs = 100, verbose = 0)
 
-            X_train = self.X[train_i[0]:train_i[1]]
-            y_train = self.y[train_i[0]:train_i[1]]
-
-            X_test = self.X[test_i[0]:test_i[1]]
-
-            X_train = StandardScaler().fit_transform(X_train)
-            X_test = StandardScaler().fit_transform(X_test)
-
-            model.fit(X_train, y_train, batch_size = 100, epochs = 100, verbose = 0)
-
-            predicted_probs = model.predict(X_test)[:, 0]
+            predicted_probs = model.predict(subset['X_test'])[:, 0]
 
             self.predicted_probs[model_name].extend(list(predicted_probs))
             self.predictions[model_name].extend([1 if p >= 0.5 else 0 for p in predicted_probs])
@@ -118,7 +96,7 @@ class Backtester:
         progress_bar(n, n, prefix = f'{model_name}:', length = 20)
         print()
 
-        self.predictions[model_name] = pd.Series(self.predictions[model_name], index = self.y.index[start:end])
+        self.predictions[model_name] = pd.Series(self.predictions[model_name], index = self.index)
    
     def plot_CR(self):
         plt.plot(self.bnh_portfolio.cumulative_return, label = 'Buy & Hold')
@@ -134,12 +112,6 @@ class Backtester:
         plt.show()
     
     def test(self, n):
-        start = self.backtest_periods[0]['test'][0]
-        end = self.backtest_periods[-1]['test'][1]
-
-        y_true = self.y[start:end]
-        returns = self.returns[start:end]
-
         if not os.path.isdir('backtest_results/'):
             os.mkdir('backtest_results/')
 
@@ -157,10 +129,10 @@ class Backtester:
 
                 signals = self.policy.generate_signals(self.predictions[model_name])
 
-                self.portfolios[model_name].calc_error_metrics(self.predictions[model_name], y_true)
-                self.portfolios[model_name].calc_profitability_metrics(signals, returns, self.bnh_portfolio.annualized_return)
-                self.portfolios[model_name].calc_conf_matrix(self.predictions[model_name], y_true)
-                self.portfolios[model_name].calc_conf_matrix_prof(self.predictions[model_name], y_true, returns)
+                self.portfolios[model_name].calc_error_metrics(self.predictions[model_name], self.y_true)
+                self.portfolios[model_name].calc_profitability_metrics(signals, self.returns, self.bnh_portfolio.annualized_return)
+                self.portfolios[model_name].calc_conf_matrix(self.predictions[model_name], self.y_true)
+                self.portfolios[model_name].calc_conf_matrix_prof(self.predictions[model_name], self.y_true, self.returns)
 
             print()
             
@@ -182,9 +154,6 @@ class Backtester:
         self._write_reports(n)
     
     def report(self):
-        start = self.backtest_periods[0]['test'][0]
-        end = self.backtest_periods[-1]['test'][1]
-
         error_metrics_report = pd.read_csv(f'backtest_results/{self.asset_name}_err.csv', index_col = 'Model name')
         profitability_metrics_report = pd.read_csv(f'backtest_results/{self.asset_name}_prof.csv', index_col = 'Model name')
         confusion_matrix_report = pd.read_csv(f'backtest_results/{self.asset_name}_conf_mat.csv', index_col = 'Model name')
@@ -195,7 +164,7 @@ class Backtester:
 
 
         print(f'\n===========Performance metrics for {self.asset_name}===========')
-        print(f'Testing period: {self.y.index[start]} - {self.y.index[end - 1]}')
+        print(f'Testing period: {self.index[0]} - {self.index[-1]}')
         print(f'Models tested: {len(self.model_names)}\n')
 
         print('---------------------------Error metrics-------------------------')

@@ -6,10 +6,10 @@ import pandas as pd
 
 from sklearn.preprocessing import StandardScaler
 
-def generate_subsets(X, y, returns, training_size, window):
-	i = 0
-	n = len(X)
+def generate_subsets(X, y, returns, testing_period, training_size, window):
 	backtest_subsets = []
+	n = len(X)
+	i = 0
 
 	while i + training_size + window <= n:
 		subset = {}
@@ -42,6 +42,3 @@ def standardize(backtest_subsets):
 									'returns_test': subset['returns_test']})
 
 	return standardized_subsets
-
-def reshape(backtest_subsets, archit):
-	pass

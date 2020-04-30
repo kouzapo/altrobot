@@ -3,6 +3,7 @@
 
 import numpy as np
 import pandas as pd
+
 import ta
 
 class FeatureConstructor:
@@ -11,17 +12,6 @@ class FeatureConstructor:
 
         self.dataset = dataset
         self.dates = (dataset['Date'].iloc[train_start], testing_period[1])
-    
-    def _reshape_timesteps(self, X, timesteps):
-        start = self.dates[0]
-        end = self.dates[1]
-
-        n_features = X.shape[1]
-
-        C = pd.concat([X.shift(i).dropna()[(timesteps - 1) - i:] for i in range(timesteps)], axis = 1).loc[start:end][:-1]
-        reshaped = np.reshape(C.values, (C.shape[0], timesteps, n_features))
-        
-        return reshaped
         
     def _returns(self):
         start = self.dates[0]
@@ -67,17 +57,13 @@ class FeatureConstructor:
 
         return X
 
-    def run_preprocessing(self, archit, timesteps = 0):
+    def run_preprocessing(self):
         start = self.dates[0]
         end = self.dates[1]
 
         features = self._technical_indicators()
 
-        if archit == 'mlp':
-            X = features.loc[start:end][:-1].values
-            
-        elif archit == 'lstm' and timesteps >= 2:
-            X = self._reshape_timesteps(features, timesteps)
+        X = features.loc[start:end][:-1].values
 
         returns = self._returns()
         y = self._labels(returns)

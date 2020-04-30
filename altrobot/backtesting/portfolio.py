@@ -22,11 +22,9 @@ class BacktestPortfolio:
         p_star = py * pz + (1 - py) * (1 - pz)
         u = p_star * (1 - p_star) / n
 
-        A = (((2 * pz - 1) ** 2) * py * (1 - py)) / n
-        B = (((2 * py - 1) ** 2) * pz * (1 - pz)) / n
-        C = (4 * py * pz * (1 - py) * (1 - pz)) / (n ** 2)
-
-        w = A + B + C
+        w = (((2 * pz - 1) ** 2) * py * (1 - py)) / n + \
+            (((2 * py - 1) ** 2) * pz * (1 - pz)) / n + \
+            (4 * py * pz * (1 - py) * (1 - pz)) / (n ** 2)
 
         PT = (pyz - p_star) / np.sqrt(u - w)
         p_value = 1 - norm.cdf(PT)

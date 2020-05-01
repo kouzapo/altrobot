@@ -16,7 +16,7 @@ from keras.utils import plot_model
 sys.stderr = stderr
 
 def banner():
-    with open('banner.txt', 'r') as f:
+    with open('banner', 'r') as f:
         for i in f:
             print(i.splitlines()[0])
 

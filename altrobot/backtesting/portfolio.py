@@ -85,7 +85,11 @@ class BacktestPortfolio:
         else:
             self.information_ratio = 0
 
-        self.profitability_metrics = np.array([float(self.cumulative_return.iloc[-1]), self.annualized_return, self.annualized_volatiliy, self.sharpe_ratio, self.information_ratio])
+        self.profitability_metrics = np.array([float(self.cumulative_return.iloc[-1]), \
+                                                     self.annualized_return, \
+                                                     self.annualized_volatiliy, \
+                                                     self.sharpe_ratio, \
+                                                     self.information_ratio])
     
     def calc_conf_matrix(self, predictions, y_true):
         conf_matrix = confusion_matrix(predictions, y_true)

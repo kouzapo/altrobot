@@ -5,8 +5,6 @@ import os
 import sys
 import json
 
-import pandas as pd
-
 stderr = sys.stderr
 sys.stderr = open(os.devnull, 'w')
 

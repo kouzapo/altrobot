@@ -33,9 +33,6 @@ class FeatureConstructor:
         return y
     
     def _technical_indicators(self):
-        start = self.dates[0]
-        end = self.dates[1]
-
         close = self.dataset['Adj Close']
         high = self.dataset['High']
         low = self.dataset['Low']

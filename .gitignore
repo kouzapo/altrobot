@@ -107,3 +107,4 @@ venv.bak/
 analyze_data.py
 altrobot/backtest_results/
 altrobot/settings.ini
+altrobot/.vscode/settings.json

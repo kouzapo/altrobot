@@ -108,3 +108,4 @@ analyze_data.py
 altrobot/backtest_results/
 altrobot/settings.ini
 */.vscode/
+.vscode/

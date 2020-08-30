@@ -159,10 +159,6 @@ class Backtester:
         confusion_matrix_report = pd.read_csv(f'backtest_results/{self.asset_name}_conf_mat.csv', index_col = 'Model name')
         confusion_matrix_prof_report = pd.read_csv(f'backtest_results/{self.asset_name}_conf_mat_prof.csv', index_col = 'Model name')
 
-
-
-
-
         print(f'\n===========Performance metrics for {self.asset_name}===========')
         print(f'Testing period: {self.index[0]} - {self.index[-1]}')
         print(f'Models tested: {len(self.model_names)}\n')
@@ -182,5 +178,3 @@ class Backtester:
         print('-------------Confusion matrix performance-----------')
         print(confusion_matrix_prof_report)
         print()
-
-        #self.plot_CR()

@@ -49,16 +49,20 @@ class Backtester:
         self.bnh_portfolio.calc_conf_matrix_prof(predictions, self.y_true, self.returns)
     
     def _write_reports(self, n):
-        err_concat = pd.concat([pd.read_csv(f'backtest_results/{self.asset_name}_err_{str(i)}.csv', index_col = 'Model name') for i in range(n)])
+        err_concat = pd.concat([pd.read_csv(f'backtest_results/{self.asset_name}_err_{str(i)}.csv', 
+        index_col = 'Model name') for i in range(n)])
         err_groupby = err_concat.groupby(err_concat.index)
 
-        perf_concat = pd.concat([pd.read_csv(f'backtest_results/{self.asset_name}_prof_{str(i)}.csv', index_col = 'Model name') for i in range(n)])
+        perf_concat = pd.concat([pd.read_csv(f'backtest_results/{self.asset_name}_prof_{str(i)}.csv', 
+        index_col = 'Model name') for i in range(n)])
         perf_groupby = perf_concat.groupby(perf_concat.index)
 
-        conf_matrix_concat = pd.concat([pd.read_csv(f'backtest_results/{self.asset_name}_conf_mat_{str(i)}.csv', index_col = 'Model name') for i in range(n)])
+        conf_matrix_concat = pd.concat([pd.read_csv(f'backtest_results/{self.asset_name}_conf_mat_{str(i)}.csv', 
+        index_col = 'Model name') for i in range(n)])
         conf_matrix_groupby = conf_matrix_concat.groupby(conf_matrix_concat.index)
 
-        conf_matrix_prof_concat = pd.concat([pd.read_csv(f'backtest_results/{self.asset_name}_conf_mat_prof_{str(i)}.csv', index_col = 'Model name') for i in range(n)])
+        conf_matrix_prof_concat = pd.concat([pd.read_csv(f'backtest_results/{self.asset_name}_conf_mat_prof_{str(i)}.csv', 
+        index_col = 'Model name') for i in range(n)])
         conf_matrix_prof_groupby = conf_matrix_prof_concat.groupby(conf_matrix_prof_concat.index)
 
         error_metrics_report = err_groupby.mean()
@@ -136,10 +140,22 @@ class Backtester:
 
             print()
             
-            error_metrics_report = pd.DataFrame([self.bnh_portfolio.error_metrics] + [self.portfolios[model_name].error_metrics for model_name in self.model_names], columns = ['Accuracy', 'Precision', 'Recall', 'F1 Score', 'PT p-value'], index = ['Buy & Hold'] + self.model_names)
-            profitability_metrics_report = pd.DataFrame([self.bnh_portfolio.profitability_metrics] + [self.portfolios[model_name].profitability_metrics for model_name in self.model_names], columns = ['CR', 'AR', 'AV', 'SR', 'IR'], index = ['Buy & Hold'] + self.model_names)
-            conf_matrix_report = pd.DataFrame([self.bnh_portfolio.conf_matrix] + [self.portfolios[model_name].conf_matrix for model_name in self.model_names], columns = ['TP', 'TN', 'FP', 'FN'], index = ['Buy & Hold'] + self.model_names)
-            conf_matrix_prof_report = pd.DataFrame([self.bnh_portfolio.conf_matrix_prof] + [self.portfolios[model_name].conf_matrix_prof for model_name in self.model_names], columns = ['TP', 'TN', 'FP', 'FN'], index = ['Buy & Hold'] + self.model_names)            
+            error_metrics_report = pd.DataFrame([self.bnh_portfolio.error_metrics] 
+            + [self.portfolios[model_name].error_metrics for model_name in self.model_names], 
+            columns = ['Accuracy', 'Precision', 'Recall', 'F1 Score', 'PT p-value'], 
+            index = ['Buy & Hold'] + self.model_names)
+
+            profitability_metrics_report = pd.DataFrame([self.bnh_portfolio.profitability_metrics] 
+            + [self.portfolios[model_name].profitability_metrics for model_name in self.model_names], 
+            columns = ['CR', 'AR', 'AV', 'SR', 'IR'], index = ['Buy & Hold'] + self.model_names)
+
+            conf_matrix_report = pd.DataFrame([self.bnh_portfolio.conf_matrix] + 
+            [self.portfolios[model_name].conf_matrix for model_name in self.model_names], 
+            columns = ['TP', 'TN', 'FP', 'FN'], index = ['Buy & Hold'] + self.model_names)
+
+            conf_matrix_prof_report = pd.DataFrame([self.bnh_portfolio.conf_matrix_prof] + 
+            [self.portfolios[model_name].conf_matrix_prof for model_name in self.model_names], 
+            columns = ['TP', 'TN', 'FP', 'FN'], index = ['Buy & Hold'] + self.model_names)            
 
             error_metrics_report.index.name = 'Model name'
             profitability_metrics_report.index.name = 'Model name'

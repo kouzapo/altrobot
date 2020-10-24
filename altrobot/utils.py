@@ -8,8 +8,7 @@ import json
 stderr = sys.stderr
 sys.stderr = open(os.devnull, 'w')
 
-from keras.models import model_from_json
-from keras.utils import plot_model
+from tensorflow.keras.models import model_from_json
 
 sys.stderr = stderr
 

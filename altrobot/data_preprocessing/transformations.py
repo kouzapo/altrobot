@@ -26,6 +26,13 @@ def generate_subsets(X, y, returns, testing_period, training_size, window):
 		backtest_subsets.append(subset)
 
 		i += window
+	
+	if len(y) % window != 0:
+		i -= window
+
+		backtest_subsets[-1]['X_test'] = X[i + training_size:len(X)]
+		backtest_subsets[-1]['y_test'] = y[i + training_size:len(y)]
+		backtest_subsets[-1]['returns_test'] = returns[i + training_size:len(returns)]
 
 	return backtest_subsets
 

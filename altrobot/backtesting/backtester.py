@@ -41,7 +41,7 @@ class Backtester:
         self.bnh_portfolio = BacktestPortfolio()
 
         predictions = pd.Series(np.ones(len(self.y_true), dtype = int), index = self.index)
-        signals = self.policy.generate_signals(predictions)
+        signals = AllInOutPolicy().generate_signals(predictions, None)
 
         self.bnh_portfolio.calc_error_metrics(predictions, self.y_true)
         self.bnh_portfolio.calc_profitability_metrics(signals, self.returns)
@@ -100,6 +100,7 @@ class Backtester:
         progress_bar(n, n, prefix = f'{model_name}:', length = 20)
         print()
 
+        self.predicted_probs[model_name] = pd.Series(self.predicted_probs[model_name], index = self.index)
         self.predictions[model_name] = pd.Series(self.predictions[model_name], index = self.index)
    
     def plot_CR(self):
@@ -131,7 +132,7 @@ class Backtester:
             for model_name in self.model_names:
                 self._predict(model_name)
 
-                signals = self.policy.generate_signals(self.predictions[model_name])
+                signals = self.policy.generate_signals(self.predictions[model_name], self.predicted_probs[model_name])
 
                 self.portfolios[model_name].calc_error_metrics(self.predictions[model_name], self.y_true)
                 self.portfolios[model_name].calc_profitability_metrics(signals, self.returns, self.bnh_portfolio.annualized_return)

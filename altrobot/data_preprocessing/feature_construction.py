@@ -45,9 +45,9 @@ class FeatureConstructor:
 
         X['RSI'] = ta.momentum.RSIIndicator(close).rsi()
         X['MACD'] = ta.trend.MACD(close).macd_diff()
-        X['Williams %R'] = ta.momentum.WilliamsRIndicator(high, low, close).wr()
-        X['Stoc. Osc.'] = ta.momentum.StochasticOscillator(high, low, close, d_n = 1).stoch()
-        X['ROC'] = ta.momentum.ROCIndicator(close, n = 1).roc()
+        X['Williams %R'] = ta.momentum.WilliamsRIndicator(high, low, close).williams_r()
+        X['Stoc. Osc.'] = ta.momentum.StochasticOscillator(high, low, close, window = 1).stoch()
+        X['ROC'] = ta.momentum.ROCIndicator(close, window = 1).roc()
         X['Bol. Bands'] = ta.volatility.BollingerBands(close).bollinger_mavg()
         X['Par. SAR'] = ta.trend.PSARIndicator(high, low, close).psar()
         X['ADX'] = ta.trend.ADXIndicator(high, low, close).adx()

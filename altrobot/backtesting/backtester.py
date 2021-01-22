@@ -9,14 +9,16 @@ from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 from matplotlib import style
 
-from policy import AllInOutPolicy
 from backtesting.portfolio import BacktestPortfolio
+from backtesting.policy import AllInOutPolicy
 from utils import progress_bar, load_model
 
 style.use('ggplot')
 
 
 class Backtester:
+
+    RESULTS_PATH = 'resources/backtest_results/'
 
     def __init__(self, backtest_subsets, asset_name, model_names, policy):
         self.backtest_subsets = backtest_subsets
@@ -49,19 +51,19 @@ class Backtester:
         self.bnh_portfolio.calc_conf_matrix_prof(predictions, self.y_true, self.returns)
 
     def _write_reports(self, n):
-        err_concat = pd.concat([pd.read_csv(f'resources/backtest_results/{self.asset_name}_err_{str(i)}.csv',
+        err_concat = pd.concat([pd.read_csv(f'{self.RESULTS_PATH + self.asset_name}_err_{str(i)}.csv',
                                             index_col = 'Model name') for i in range(n)])
         err_groupby = err_concat.groupby(err_concat.index)
 
-        perf_concat = pd.concat([pd.read_csv(f'resources/backtest_results/{self.asset_name}_prof_{str(i)}.csv',
+        perf_concat = pd.concat([pd.read_csv(f'{self.RESULTS_PATH + self.asset_name}_prof_{str(i)}.csv',
                                             index_col = 'Model name') for i in range(n)])
         perf_groupby = perf_concat.groupby(perf_concat.index)
 
-        conf_matrix_concat = pd.concat([pd.read_csv(f'resources/backtest_results/{self.asset_name}_conf_mat_{str(i)}.csv',
+        conf_matrix_concat = pd.concat([pd.read_csv(f'{self.RESULTS_PATH + self.asset_name}_conf_mat_{str(i)}.csv',
                                             index_col = 'Model name') for i in range(n)])
         conf_matrix_groupby = conf_matrix_concat.groupby(conf_matrix_concat.index)
 
-        conf_matrix_prof_concat = pd.concat([pd.read_csv(f'resources/backtest_results/{self.asset_name}_conf_mat_prof_{str(i)}.csv',
+        conf_matrix_prof_concat = pd.concat([pd.read_csv(f'{self.RESULTS_PATH + self.asset_name}_conf_mat_prof_{str(i)}.csv',
                                             index_col = 'Model name') for i in range(n)])
         conf_matrix_prof_groupby = conf_matrix_prof_concat.groupby(conf_matrix_prof_concat.index)
 
@@ -70,10 +72,10 @@ class Backtester:
         confusion_matrix_report = conf_matrix_groupby.mean()
         confusion_matrix_prof_report = conf_matrix_prof_groupby.mean()
 
-        error_metrics_report.to_csv(f'resources/backtest_results/{self.asset_name}_err.csv')
-        profitability_metrics_report.to_csv(f'resources/backtest_results/{self.asset_name}_prof.csv')
-        confusion_matrix_report.to_csv(f'resources/backtest_results/{self.asset_name}_conf_mat.csv')
-        confusion_matrix_prof_report.to_csv(f'resources/backtest_results/{self.asset_name}_conf_mat_prof.csv')
+        error_metrics_report.to_csv(f'{self.RESULTS_PATH + self.asset_name}_err.csv')
+        profitability_metrics_report.to_csv(f'{self.RESULTS_PATH + self.asset_name}_prof.csv')
+        confusion_matrix_report.to_csv(f'{self.RESULTS_PATH + self.asset_name}_conf_mat.csv')
+        confusion_matrix_prof_report.to_csv(f'{self.RESULTS_PATH + self.asset_name}_conf_mat_prof.csv')
 
     def _predict(self, model_name):
         n = len(self.backtest_subsets)
@@ -117,8 +119,8 @@ class Backtester:
         plt.show()
 
     def test(self, n):
-        if not os.path.isdir('resources/backtest_results/'):
-            os.mkdir('resources/backtest_results/')
+        if not os.path.isdir(self.RESULTS_PATH):
+            os.mkdir(self.RESULTS_PATH)
 
         self._benchmark_metrics()
 
@@ -166,18 +168,18 @@ class Backtester:
             conf_matrix_report.index.name = 'Model name'
             conf_matrix_prof_report.index.name = 'Model name'
             
-            error_metrics_report.to_csv(f'resources/backtest_results/{self.asset_name}_err_{str(i)}.csv')
-            profitability_metrics_report.to_csv(f'resources/backtest_results/{self.asset_name}_prof_{str(i)}.csv')
-            conf_matrix_report.to_csv(f'resources/backtest_results/{self.asset_name}_conf_mat_{str(i)}.csv')
-            conf_matrix_prof_report.to_csv(f'resources/backtest_results/{self.asset_name}_conf_mat_prof_{str(i)}.csv')
+            error_metrics_report.to_csv(f'{self.RESULTS_PATH + self.asset_name}_err_{str(i)}.csv')
+            profitability_metrics_report.to_csv(f'{self.RESULTS_PATH + self.asset_name}_prof_{str(i)}.csv')
+            conf_matrix_report.to_csv(f'{self.RESULTS_PATH + self.asset_name}_conf_mat_{str(i)}.csv')
+            conf_matrix_prof_report.to_csv(f'{self.RESULTS_PATH + self.asset_name}_conf_mat_prof_{str(i)}.csv')
         
         self._write_reports(n)
     
     def report(self):
-        error_metrics_report = pd.read_csv(f'resources/backtest_results/{self.asset_name}_err.csv', index_col = 'Model name')
-        profitability_metrics_report = pd.read_csv(f'resources/backtest_results/{self.asset_name}_prof.csv', index_col = 'Model name')
-        confusion_matrix_report = pd.read_csv(f'resources/backtest_results/{self.asset_name}_conf_mat.csv', index_col = 'Model name')
-        confusion_matrix_prof_report = pd.read_csv(f'resources/backtest_results/{self.asset_name}_conf_mat_prof.csv', index_col = 'Model name')
+        error_metrics_report = pd.read_csv(f'{self.RESULTS_PATH + self.asset_name}_err.csv', index_col = 'Model name')
+        profitability_metrics_report = pd.read_csv(f'{self.RESULTS_PATH + self.asset_name}_prof.csv', index_col = 'Model name')
+        confusion_matrix_report = pd.read_csv(f'{self.RESULTS_PATH + self.asset_name}_conf_mat.csv', index_col = 'Model name')
+        confusion_matrix_prof_report = pd.read_csv(f'{self.RESULTS_PATH + self.asset_name}_conf_mat_prof.csv', index_col = 'Model name')
 
         print(f'\n===========Performance metrics for {self.asset_name}===========')
         print(f'Testing period: {self.index[0]} - {self.index[-1]}')

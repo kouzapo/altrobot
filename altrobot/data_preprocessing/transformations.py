@@ -6,6 +6,7 @@ import pandas as pd
 
 from sklearn.preprocessing import StandardScaler
 
+
 def generate_subsets(X, y, returns, testing_period, training_size, window):
 	backtest_subsets = []
 	n = len(X)
@@ -36,12 +37,13 @@ def generate_subsets(X, y, returns, testing_period, training_size, window):
 
 	return backtest_subsets
 
+
 def standardize(backtest_subsets):
 	scaler = StandardScaler()
 	standardized_subsets = []
 
 	for subset in backtest_subsets:
-		standardized_subsets.append({'X_train': scaler.fit_transform(subset['X_train']), 
+		standardized_subsets.append({'X_train': scaler.fit_transform(subset['X_train']),
 									'X_test': scaler.fit_transform(subset['X_test']),
 									'y_train': subset['y_train'],
 									'y_test': subset['y_test'],

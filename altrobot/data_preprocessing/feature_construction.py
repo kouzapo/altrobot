@@ -3,16 +3,17 @@
 
 import numpy as np
 import pandas as pd
-
 import ta
 
+
 class FeatureConstructor:
+
     def __init__(self, dataset, testing_period, training_size):
         train_start = dataset['Date'][dataset['Date'] == testing_period[0]].index[0] - training_size
 
         self.dataset = dataset
         self.dates = (dataset['Date'].iloc[train_start], testing_period[1])
-        
+
     def _returns(self):
         start = self.dates[0]
         end = self.dates[1]
@@ -24,14 +25,14 @@ class FeatureConstructor:
         returns = returns.shift(-1).dropna()
 
         return returns
-    
+
     def _labels(self, returns):
         y = np.sign(returns)
         y[y == 0] = 1
         y[y == -1] = 0
 
         return y
-    
+
     def _technical_indicators(self):
         close = self.dataset['Adj Close']
         high = self.dataset['High']

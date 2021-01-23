@@ -6,3 +6,4 @@ matplotlib
 ta
 keras
 theano
+tensorflow

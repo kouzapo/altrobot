@@ -62,7 +62,6 @@ class FeatureConstructor:
         features = self._technical_indicators()
 
         X = features.loc[start:end][:-1].values
-
         returns = self._returns()
         y = self._labels(returns)
 

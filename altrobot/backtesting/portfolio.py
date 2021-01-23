@@ -98,11 +98,11 @@ class BacktestPortfolio:
         self.conf_matrix = np.array([conf_matrix[1][1], conf_matrix[0][0], conf_matrix[1][0], conf_matrix[0][1]])
 
     def calc_conf_matrix_prof(self, predictions, y_true, returns):
-        A = pd.DataFrame({'y_true': y_true, 'pred': predictions, 'rets': returns})
+        D = pd.DataFrame({'y_true': y_true, 'pred': predictions, 'rets': returns})
 
-        TP = A[(A['y_true'] == 1) & (A['pred'] == 1)]
-        TN = A[(A['y_true'] == 0) & (A['pred'] == 0)]
-        FP = A[(A['y_true'] == 0) & (A['pred'] == 1)]
-        FN = A[(A['y_true'] == 1) & (A['pred'] == 0)]
+        TP = D[(D['y_true'] == 1) & (D['pred'] == 1)]
+        TN = D[(D['y_true'] == 0) & (D['pred'] == 0)]
+        FP = D[(D['y_true'] == 0) & (D['pred'] == 1)]
+        FN = D[(D['y_true'] == 1) & (D['pred'] == 0)]
 
         self.conf_matrix_prof = np.array([TP['rets'].mean(), TN['rets'].mean(), FP['rets'].mean(), FN['rets'].mean()])

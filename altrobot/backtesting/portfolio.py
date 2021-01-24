@@ -27,6 +27,9 @@ class BacktestPortfolio:
             (((2 * py - 1) ** 2) * pz * (1 - pz)) / n + \
             (4 * py * pz * (1 - py) * (1 - pz)) / (n ** 2)
 
+        if u - w == 0:
+            return np.nan
+
         PT = (pyz - p_star) / np.sqrt(u - w)
         p_value = 1 - norm.cdf(PT)
 

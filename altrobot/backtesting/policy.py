@@ -12,37 +12,33 @@ class Policy(ABC):
         pass
 
     @abstractmethod
-    def generate_signals(self):
+    def generate_signals(self, predicted_probs):
         pass
 
 
 class AllInOutPolicy(Policy):
 
-    def __init__(self):
-        pass
+    def __init__(self, bounds):
+        if bounds[0] > bounds[1]:
+             raise ValueError('Lower bound is greater than the upper bound')
 
-    def generate_signals(self, predictions, predicted_probs):
+        self.bounds = bounds
 
-        return np.array([1 if p == 1 else 0 for p in predictions])
+    def generate_signals(self, predicted_probs):
+        lower_bound = self.bounds[0]
+        upper_bound = self.bounds[1]
 
-
-class BuyHoldSalePolicy(Policy):
-
-    def __init__(self):
-        pass
-
-    def generate_signals(self, predictions, predicted_probs):
         signals = []
 
         for p in predicted_probs:
-            if p >= 0.6:
+            if p >= upper_bound:
                 signals.append(1)
-            elif p <= 0.4:
+            elif p < lower_bound:
                 signals.append(0)
             else:
                 if len(signals) == 0:
                     signals.append(0)
                 else:
                     signals.append(signals[-1])
-
+        
         return np.array(signals)

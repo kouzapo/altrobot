@@ -43,14 +43,15 @@ class Backtester:
         self.bnh_portfolio = BacktestPortfolio()
 
         predictions = pd.Series(np.ones(len(self.y_true), dtype = int), index = self.index)
-        signals = AllInOutPolicy().generate_signals(predictions, None)
+        benchmark_policy = AllInOutPolicy(bounds = (0.5, 0.5))
+        signals = benchmark_policy.generate_signals(predictions)
 
         self.bnh_portfolio.calc_error_metrics(predictions, self.y_true)
         self.bnh_portfolio.calc_profitability_metrics(signals, self.returns)
         self.bnh_portfolio.calc_conf_matrix(predictions, self.y_true)
         self.bnh_portfolio.calc_conf_matrix_prof(predictions, self.y_true, self.returns)
 
-    def _write_reports(self, n):
+    def _export_aggregated_reports(self, n):
         err_concat = pd.concat([pd.read_csv(f'{self.RESULTS_PATH + self.asset_name}_err_{str(i)}.csv',
                                             index_col = 'Model name') for i in range(n)])
         err_groupby = err_concat.groupby(err_concat.index)
@@ -134,7 +135,7 @@ class Backtester:
             for model_name in self.model_names:
                 self._predict(model_name)
 
-                signals = self.policy.generate_signals(self.predictions[model_name], self.predicted_probs[model_name])
+                signals = self.policy.generate_signals(self.predicted_probs[model_name])
 
                 self.portfolios[model_name].calc_error_metrics(self.predictions[model_name], self.y_true)
                 self.portfolios[model_name].calc_profitability_metrics(signals, self.returns, self.bnh_portfolio.annualized_return)
@@ -167,14 +168,14 @@ class Backtester:
             profitability_metrics_report.index.name = 'Model name'
             conf_matrix_report.index.name = 'Model name'
             conf_matrix_prof_report.index.name = 'Model name'
-            
+
             error_metrics_report.to_csv(f'{self.RESULTS_PATH + self.asset_name}_err_{str(i)}.csv')
             profitability_metrics_report.to_csv(f'{self.RESULTS_PATH + self.asset_name}_prof_{str(i)}.csv')
             conf_matrix_report.to_csv(f'{self.RESULTS_PATH + self.asset_name}_conf_mat_{str(i)}.csv')
             conf_matrix_prof_report.to_csv(f'{self.RESULTS_PATH + self.asset_name}_conf_mat_prof_{str(i)}.csv')
-        
-        self._write_reports(n)
-    
+
+        self._export_aggregated_reports(n)
+
     def report(self):
         error_metrics_report = pd.read_csv(f'{self.RESULTS_PATH + self.asset_name}_err.csv', index_col = 'Model name')
         profitability_metrics_report = pd.read_csv(f'{self.RESULTS_PATH + self.asset_name}_prof.csv', index_col = 'Model name')

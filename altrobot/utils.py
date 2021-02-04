@@ -44,7 +44,7 @@ def fetch_dataset(symbol, start, end, save = False):
     if save:
         dataset.to_csv(f'{DATASETS_PATH + symbol}.dat')
 
-    return dataset
+    return dataset.reset_index()
 
 
 def progress_bar(iteration, total, prefix = '', suffix = '', decimals = 2, length = 100, fill = '#'):

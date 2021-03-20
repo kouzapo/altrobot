@@ -54,24 +54,20 @@ class Backtester:
     def _export_aggregated_reports(self, n):
         err_concat = pd.concat([pd.read_csv(f'{self.RESULTS_PATH + self.asset_name}_err_{str(i)}.csv',
                                             index_col = 'Model name') for i in range(n)])
-        err_groupby = err_concat.groupby(err_concat.index)
 
         perf_concat = pd.concat([pd.read_csv(f'{self.RESULTS_PATH + self.asset_name}_prof_{str(i)}.csv',
                                             index_col = 'Model name') for i in range(n)])
-        perf_groupby = perf_concat.groupby(perf_concat.index)
 
         conf_matrix_concat = pd.concat([pd.read_csv(f'{self.RESULTS_PATH + self.asset_name}_conf_mat_{str(i)}.csv',
                                             index_col = 'Model name') for i in range(n)])
-        conf_matrix_groupby = conf_matrix_concat.groupby(conf_matrix_concat.index)
 
         conf_matrix_prof_concat = pd.concat([pd.read_csv(f'{self.RESULTS_PATH + self.asset_name}_conf_mat_prof_{str(i)}.csv',
                                             index_col = 'Model name') for i in range(n)])
-        conf_matrix_prof_groupby = conf_matrix_prof_concat.groupby(conf_matrix_prof_concat.index)
 
-        error_metrics_report = err_groupby.mean()
-        profitability_metrics_report = perf_groupby.mean()
-        confusion_matrix_report = conf_matrix_groupby.mean()
-        confusion_matrix_prof_report = conf_matrix_prof_groupby.mean()
+        error_metrics_report = err_concat.groupby(err_concat.index).mean()
+        profitability_metrics_report = perf_concat.groupby(perf_concat.index).mean()
+        confusion_matrix_report = conf_matrix_concat.groupby(conf_matrix_concat.index).mean()
+        confusion_matrix_prof_report = conf_matrix_prof_concat.groupby(conf_matrix_prof_concat.index).mean()
 
         error_metrics_report.to_csv(f'{self.RESULTS_PATH + self.asset_name}_err.csv')
         profitability_metrics_report.to_csv(f'{self.RESULTS_PATH + self.asset_name}_prof.csv')

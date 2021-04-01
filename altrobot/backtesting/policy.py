@@ -2,8 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from abc import ABC, abstractmethod
+from typing import Tuple
 
 import numpy as np
+import pandas as pd
 
 
 class Policy(ABC):
@@ -12,19 +14,18 @@ class Policy(ABC):
         pass
 
     @abstractmethod
-    def generate_signals(self, predicted_probs):
-        pass
+    def generate_signals(self, predicted_probs): ...
 
 
 class AllInOutPolicy(Policy):
 
-    def __init__(self, bounds):
+    def __init__(self, bounds: Tuple[float, float]):
         if bounds[0] > bounds[1]:
              raise ValueError('Lower bound is greater than the upper bound')
 
         self.bounds = bounds
 
-    def generate_signals(self, predicted_probs):
+    def generate_signals(self, predicted_probs: pd.Series) -> np.ndarray:
         lower_bound = self.bounds[0]
         upper_bound = self.bounds[1]
 

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from typing import Tuple
+
 import numpy as np
 import pandas as pd
 import ta
@@ -8,13 +10,13 @@ import ta
 
 class FeatureConstructor:
 
-    def __init__(self, dataset, testing_period, training_size):
+    def __init__(self, dataset: pd.DataFrame, testing_period: Tuple[str, str], training_size: int):
         train_start = dataset['Date'][dataset['Date'] == testing_period[0]].index[0] - training_size
 
         self.dataset = dataset
         self.dates = (dataset['Date'].iloc[train_start], testing_period[1])
 
-    def _returns(self):
+    def _returns(self) -> pd.Series:
         start = self.dates[0]
         end = self.dates[1]
 
@@ -26,14 +28,14 @@ class FeatureConstructor:
 
         return returns
 
-    def _labels(self, returns):
+    def _labels(self, returns: pd.Series) -> pd.Series:
         y = np.sign(returns)
         y[y == 0] = 1
         y[y == -1] = 0
 
         return y
 
-    def _technical_indicators(self):
+    def _technical_indicators(self) -> pd.DataFrame:
         close = self.dataset['Adj Close']
         high = self.dataset['High']
         low = self.dataset['Low']
@@ -55,7 +57,7 @@ class FeatureConstructor:
 
         return X
 
-    def run_preprocessing(self):
+    def run_preprocessing(self) -> Tuple[pd.DataFrame, pd.Series, pd.Series]:
         start = self.dates[0]
         end = self.dates[1]
 

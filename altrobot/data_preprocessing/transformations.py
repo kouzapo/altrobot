@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import numpy as np
+from typing import Tuple, List
+
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
 
-def generate_subsets(X, y, returns, testing_period, training_size, window):
+def generate_subsets(X: pd.DataFrame, y: pd.Series, returns: pd.Series, 
+					 testing_period: Tuple[str, str], training_size: int, window: int) -> List[dict]:
 	backtest_subsets = []
 	n = len(X)
 	i = 0
@@ -37,7 +39,7 @@ def generate_subsets(X, y, returns, testing_period, training_size, window):
 	return backtest_subsets
 
 
-def standardize(backtest_subsets):
+def standardize(backtest_subsets: List[dict]) -> List[dict]:
 	scaler = StandardScaler()
 	standardized_subsets = []
 

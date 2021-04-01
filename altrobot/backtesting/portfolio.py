@@ -13,7 +13,7 @@ class BacktestPortfolio:
         self.error_metrics = []
         self.performance_metrics = []
 
-    def _PT_test(self, predictions, y_true):
+    def _PT_test(self, predictions: pd.Series, y_true: pd.Series) -> float:
         n = len(y_true)
         pyz = accuracy_score(predictions, y_true)
 
@@ -35,10 +35,10 @@ class BacktestPortfolio:
 
         return p_value
 
-    def _realized_returns(self, signals, returns):
+    def _realized_returns(self, signals: np.ndarray, returns: pd.Series):
         self.realized_returns = np.multiply(signals, np.array(returns))
 
-    def _CR(self, signals, returns):
+    def _CR(self, signals: np.ndarray, returns: pd.Series):
         cumulative_return = [1]
 
         for i in zip(signals, returns):
@@ -51,7 +51,7 @@ class BacktestPortfolio:
 
         self.cumulative_return = pd.Series(cumulative_return) - 1
 
-    def _AR(self, N):
+    def _AR(self, N: int):
         CR = self.cumulative_return.iloc[-1]
 
         self.annualized_return = np.power(1 + float(CR), 252 / N) - 1
@@ -62,12 +62,12 @@ class BacktestPortfolio:
     def _SR(self):
         self.sharpe_ratio = self.annualized_return / self.annualized_volatiliy
 
-    def _IR(self, returns, bnh_AR):
+    def _IR(self, returns: pd.Series, bnh_AR: float):
         traking_error = float((self.realized_returns - returns).std() * np.sqrt(252))
 
         self.information_ratio = (self.annualized_return - bnh_AR) / traking_error
 
-    def calc_error_metrics(self, predictions, y_true):
+    def calc_error_metrics(self, predictions: pd.Series, y_true: pd.Series):
         self.accuracy = accuracy_score(predictions, y_true)
         self.precision = recall_score(predictions, y_true)
         self.recall = precision_score(predictions, y_true)
@@ -76,7 +76,7 @@ class BacktestPortfolio:
 
         self.error_metrics = np.array([self.accuracy, self.precision, self.recall, self.f1, round(self.pt_pval, 6)])
 
-    def calc_profitability_metrics(self, signals, returns, *bnh_AR):
+    def calc_profitability_metrics(self, signals: np.ndarray, returns: pd.Series, *bnh_AR: float):
         self._realized_returns(signals, returns)
 
         self._CR(signals, returns)
@@ -95,12 +95,12 @@ class BacktestPortfolio:
                                                      self.sharpe_ratio,
                                                      self.information_ratio])
 
-    def calc_conf_matrix(self, predictions, y_true):
+    def calc_conf_matrix(self, predictions: pd.Series, y_true: pd.Series):
         conf_matrix = confusion_matrix(predictions, y_true)
 
         self.conf_matrix = np.array([conf_matrix[1][1], conf_matrix[0][0], conf_matrix[1][0], conf_matrix[0][1]])
 
-    def calc_conf_matrix_prof(self, predictions, y_true, returns):
+    def calc_conf_matrix_prof(self, predictions: pd.Series, y_true: pd.Series, returns: pd.Series):
         D = pd.DataFrame({'y_true': y_true, 'pred': predictions, 'rets': returns})
 
         TP = D[(D['y_true'] == 1) & (D['pred'] == 1)]

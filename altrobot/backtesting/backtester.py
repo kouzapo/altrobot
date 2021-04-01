@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+from typing import List
 
 import numpy as np
 import pandas as pd
@@ -10,7 +11,7 @@ import matplotlib.pyplot as plt
 from matplotlib import style
 
 from backtesting.portfolio import BacktestPortfolio
-from backtesting.policy import AllInOutPolicy
+from backtesting.policy import Policy, AllInOutPolicy
 from utils import progress_bar, load_model
 
 style.use('ggplot')
@@ -20,7 +21,7 @@ class Backtester:
 
     RESULTS_PATH = 'resources/backtest_results/'
 
-    def __init__(self, backtest_subsets, asset_name, model_names, policy):
+    def __init__(self, backtest_subsets: List[dict], asset_name: str, model_names: List[str], policy: Policy):
         self.backtest_subsets = backtest_subsets
         self.asset_name = asset_name
 
@@ -51,7 +52,7 @@ class Backtester:
         self.bnh_portfolio.calc_conf_matrix(predictions, self.y_true)
         self.bnh_portfolio.calc_conf_matrix_prof(predictions, self.y_true, self.returns)
 
-    def _export_aggregated_reports(self, n):
+    def _export_aggregated_reports(self, n: int):
         err_concat = pd.concat([pd.read_csv(f'{self.RESULTS_PATH + self.asset_name}_err_{str(i)}.csv',
                                             index_col = 'Model name') for i in range(n)])
 
@@ -74,14 +75,12 @@ class Backtester:
         confusion_matrix_report.to_csv(f'{self.RESULTS_PATH + self.asset_name}_conf_mat.csv')
         confusion_matrix_prof_report.to_csv(f'{self.RESULTS_PATH + self.asset_name}_conf_mat_prof.csv')
 
-    def _predict(self, model_name):
+    def _predict(self, model_name: str):
         n = len(self.backtest_subsets)
         i = 0
 
-        print('Loading {}...'.format(model_name), end = '\r')
         model = load_model(model_name)
         model.compile(optimizer = 'sgd', loss = 'binary_crossentropy', metrics = ['accuracy'])
-        print('Loading {}... Done'.format(model_name))
 
         progress_bar(0, n, prefix = f'{model_name}:', length = 20)
 
@@ -115,7 +114,7 @@ class Backtester:
 
         plt.show()
 
-    def test(self, n):
+    def test(self, n: int):
         if not os.path.isdir(self.RESULTS_PATH):
             os.mkdir(self.RESULTS_PATH)
 

@@ -2,17 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
 import json
-import datetime
 
-stderr = sys.stderr
-sys.stderr = open(os.devnull, 'w')
-
+import pandas as pd
 import pandas_datareader.data as pdr
-from tensorflow.keras.models import model_from_json
+from tensorflow.keras.models import model_from_json, Sequential
 
-sys.stderr = stderr
 
 KERAS_MODELS_PATH = 'resources/keras_models/'
 DATASETS_PATH = 'resources/datasets/'
@@ -25,12 +20,12 @@ def show_banner():
             print(line.splitlines()[0])
 
 
-def load_model(model_name):
+def load_model(model_name: str) -> Sequential:
     with open(f'{KERAS_MODELS_PATH + model_name}.json') as f:
         return model_from_json(json.load(f))
 
 
-def save_model(model, name):
+def save_model(model: Sequential, name: str):
     if os.path.exists(f'{KERAS_MODELS_PATH + name}.json'):
         raise ValueError(f'Model with name: {name} already exists')
 
@@ -38,7 +33,7 @@ def save_model(model, name):
         json.dump(model.to_json(), f)
 
 
-def fetch_dataset(symbol, start, end, save = False):
+def fetch_dataset(symbol: str, start: str, end: str, save: bool = False) -> pd.DataFrame:
     dataset = pdr.DataReader(symbol, 'yahoo', start, end)
 
     if save:
@@ -47,7 +42,8 @@ def fetch_dataset(symbol, start, end, save = False):
     return dataset.reset_index()
 
 
-def progress_bar(iteration, total, prefix = '', suffix = '', decimals = 2, length = 100, fill = '█'):
+def progress_bar(iteration: int, total: int, prefix: str = '', suffix: str = '', 
+                 decimals: int = 2, length: int = 100, fill: str = '█'):
     percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
     filled_length = int(length * iteration // total)
     bar = fill * filled_length + ' ' * (length - filled_length)

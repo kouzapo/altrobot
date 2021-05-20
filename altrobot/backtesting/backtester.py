@@ -40,7 +40,7 @@ class Backtester:
         self.y_true = pd.Series(self.y_true, index = self.index)
         self.returns = pd.Series(self.returns, index = self.index)
 
-    def _benchmark_metrics(self):
+    def _benchmark_metrics(self) -> None:
         self.bnh_portfolio = BacktestPortfolio()
 
         predictions = pd.Series(np.ones(len(self.y_true), dtype = int), index = self.index)
@@ -52,7 +52,7 @@ class Backtester:
         self.bnh_portfolio.calc_conf_matrix(predictions, self.y_true)
         self.bnh_portfolio.calc_conf_matrix_prof(predictions, self.y_true, self.returns)
 
-    def _export_aggregated_reports(self, n: int):
+    def _export_aggregated_reports(self, n: int) -> None:
         err_concat = pd.concat([pd.read_csv(f'{self.RESULTS_PATH + self.asset_name}_err_{str(i)}.csv',
                                             index_col = 'Model name') for i in range(n)])
 
@@ -75,7 +75,7 @@ class Backtester:
         confusion_matrix_report.to_csv(f'{self.RESULTS_PATH + self.asset_name}_conf_mat.csv')
         confusion_matrix_prof_report.to_csv(f'{self.RESULTS_PATH + self.asset_name}_conf_mat_prof.csv')
 
-    def _predict(self, model_name: str):
+    def _predict(self, model_name: str) -> None:
         n = len(self.backtest_subsets)
         i = 0
 
@@ -101,7 +101,7 @@ class Backtester:
         self.predicted_probs[model_name] = pd.Series(self.predicted_probs[model_name], index = self.index)
         self.predictions[model_name] = pd.Series(self.predictions[model_name], index = self.index)
 
-    def plot_CR(self):
+    def plot_CR(self) -> None:
         plt.plot(self.bnh_portfolio.cumulative_return, label = 'Buy & Hold')
 
         for model_name, portfolio in self.portfolios.items():
@@ -114,7 +114,7 @@ class Backtester:
 
         plt.show()
 
-    def test(self, n: int):
+    def test(self, n: int) -> None:
         if not os.path.isdir(self.RESULTS_PATH):
             os.mkdir(self.RESULTS_PATH)
 
@@ -171,7 +171,7 @@ class Backtester:
 
         self._export_aggregated_reports(n)
 
-    def report(self):
+    def report(self) -> None:
         error_metrics_report = pd.read_csv(f'{self.RESULTS_PATH + self.asset_name}_err.csv', index_col = 'Model name')
         profitability_metrics_report = pd.read_csv(f'{self.RESULTS_PATH + self.asset_name}_prof.csv', index_col = 'Model name')
         confusion_matrix_report = pd.read_csv(f'{self.RESULTS_PATH + self.asset_name}_conf_mat.csv', index_col = 'Model name')

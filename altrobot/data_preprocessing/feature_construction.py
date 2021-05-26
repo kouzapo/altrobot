@@ -40,10 +40,6 @@ class FeatureConstructor:
         high = self.dataset['High']
         low = self.dataset['Low']
 
-        close.index = self.dataset['Date']
-        high.index = self.dataset['Date']
-        low.index = self.dataset['Date']
-
         X = pd.DataFrame()
 
         X['RSI'] = ta.momentum.RSIIndicator(close).rsi()
@@ -55,6 +51,8 @@ class FeatureConstructor:
         X['Par. SAR'] = ta.trend.PSARIndicator(high, low, close).psar()
         X['ADX'] = ta.trend.ADXIndicator(high, low, close).adx()
 
+        X.index = self.dataset['Date']
+
         return X
 
     def run_preprocessing(self) -> Tuple[pd.DataFrame, pd.Series, pd.Series]:
@@ -63,7 +61,7 @@ class FeatureConstructor:
 
         features = self._technical_indicators()
 
-        X = features.loc[start:end][:-1].values
+        X = features.loc[start:end][:-1]#.values
         returns = self._returns()
         y = self._labels(returns)
 

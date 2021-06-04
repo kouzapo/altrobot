@@ -10,7 +10,12 @@ import ta
 
 class FeatureConstructor:
 
-    def __init__(self, dataset: pd.DataFrame, testing_period: Tuple[str, str], training_size: int):
+    def __init__(
+            self,
+            dataset: pd.DataFrame,
+            testing_period: Tuple[str, str],
+            training_size: int
+        ):
         train_start = dataset['Date'][dataset['Date'] == testing_period[0]].index[0] - training_size
 
         self.dataset = dataset
@@ -28,7 +33,10 @@ class FeatureConstructor:
 
         return returns
 
-    def _labels(self, returns: pd.Series) -> pd.Series:
+    def _labels(
+            self,
+            returns: pd.Series
+        ) -> pd.Series:
         y = np.sign(returns)
         y[y == 0] = 1
         y[y == -1] = 0

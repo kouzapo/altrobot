@@ -21,7 +21,13 @@ class Backtester:
 
     RESULTS_PATH = 'resources/backtest_results/'
 
-    def __init__(self, backtest_subsets: List[dict], asset_name: str, model_names: List[str], policy: Policy):
+    def __init__(
+            self,
+            backtest_subsets: List[dict],
+            asset_name: str,
+            model_names: List[str],
+            policy: Policy
+        ):
         self.backtest_subsets = backtest_subsets
         self.asset_name = asset_name
 
@@ -52,7 +58,10 @@ class Backtester:
         self.bnh_portfolio.calc_conf_matrix(predictions, self.y_true)
         self.bnh_portfolio.calc_conf_matrix_prof(predictions, self.y_true, self.returns)
 
-    def _export_aggregated_reports(self, n: int) -> None:
+    def _export_aggregated_reports(
+            self,
+            n: int
+        ) -> None:
         err_concat = pd.concat([pd.read_csv(f'{self.RESULTS_PATH + self.asset_name}_err_{str(i)}.csv',
                                             index_col = 'Model name') for i in range(n)])
 
@@ -75,7 +84,10 @@ class Backtester:
         confusion_matrix_report.to_csv(f'{self.RESULTS_PATH + self.asset_name}_conf_mat.csv')
         confusion_matrix_prof_report.to_csv(f'{self.RESULTS_PATH + self.asset_name}_conf_mat_prof.csv')
 
-    def _predict(self, model_name: str) -> None:
+    def _predict(
+            self,
+            model_name: str
+        ) -> None:
         n = len(self.backtest_subsets)
         i = 0
 
@@ -114,7 +126,10 @@ class Backtester:
 
         plt.show()
 
-    def test(self, n: int) -> None:
+    def test(
+            self,
+            n: int
+        ) -> None:
         if not os.path.isdir(self.RESULTS_PATH):
             os.mkdir(self.RESULTS_PATH)
 

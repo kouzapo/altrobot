@@ -6,10 +6,10 @@ import json
 
 import pandas as pd
 import pandas_datareader.data as pdr
-from tensorflow.keras.models import model_from_json, Sequential
+from tensorflow.keras.models import Sequential, model_from_json
 
 
-KERAS_MODELS_PATH = 'resources/keras_models/'
+KERAS_MODELS_ARCHITECTURES_PATH = 'resources/keras_models_architectures/'
 DATASETS_PATH = 'resources/datasets/'
 BANNER_PATH = 'resources/banner'
 
@@ -21,18 +21,18 @@ def show_banner():
 
 
 def load_model(model_name: str) -> Sequential:
-    with open(f'{KERAS_MODELS_PATH + model_name}.json') as f:
+    with open(f'{KERAS_MODELS_ARCHITECTURES_PATH + model_name}.json') as f:
         return model_from_json(json.load(f))
 
 
-def save_model(
+def save_model_architecture(
         model: Sequential,
         name: str
     ) -> None:
-    if os.path.exists(f'{KERAS_MODELS_PATH + name}.json'):
+    if os.path.exists(f'{KERAS_MODELS_ARCHITECTURES_PATH + name}.json'):
         raise ValueError(f'Model with name: {name} already exists')
 
-    with open(f'{KERAS_MODELS_PATH + name}.json', 'w') as f:
+    with open(f'{KERAS_MODELS_ARCHITECTURES_PATH + name}.json', 'w') as f:
         json.dump(model.to_json(), f)
 
 

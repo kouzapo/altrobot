@@ -13,13 +13,18 @@ class FeatureConstructor:
     def __init__(
             self,
             dataset: pd.DataFrame,
-            testing_period: Tuple[str, str],
-            training_size: int
+            training_size: int,
+            testing_period: Tuple[str, str] = None,
+            train_end: str = None
         ):
-        train_start = dataset['Date'][dataset['Date'] == testing_period[0]].index[0] - training_size
+        if testing_period:
+            train_start = dataset['Date'][dataset['Date'] == testing_period[0]].index[0] - training_size
+            self.dates = (dataset['Date'].iloc[train_start], testing_period[1])
+        elif train_end:
+            train_start = dataset['Date'][dataset['Date'] == train_end].index[0] - training_size
+            self.dates = (dataset['Date'].iloc[train_start], train_end)
 
         self.dataset = dataset
-        self.dates = (dataset['Date'].iloc[train_start], testing_period[1])
 
     def _returns(self) -> pd.Series:
         start = self.dates[0]

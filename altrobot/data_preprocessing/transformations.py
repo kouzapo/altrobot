@@ -8,7 +8,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
 
-def generate_subsets(
+def generate_backtest_subsets(
 		X: pd.DataFrame,
 		y: pd.Series,
 		returns: pd.Series,
@@ -40,7 +40,7 @@ def generate_subsets(
 
 	return backtest_subsets
 
-def generate_LSTM_subsets(
+def generate_LSTM_backtest_subsets(
 		X: pd.DataFrame,
 		y: pd.Series,
 		returns: pd.Series,

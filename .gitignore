@@ -106,6 +106,7 @@ venv.bak/
 #other
 analyze_data.py
 altrobot/resources/backtest_results/
+altrobot/resources/keras_models/
 altrobot/settings.ini
 */.vscode/
 .vscode/
